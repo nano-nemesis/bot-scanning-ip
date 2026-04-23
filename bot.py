@@ -18,6 +18,7 @@ from db import (
     get_any_session,
     get_ip_detail_any,
     get_ips_for_nullroute,
+    get_latest_done_session,
     get_latest_session,
     get_session_history,
     get_weekly_stats,
@@ -222,9 +223,11 @@ async def cmd_nullroute(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         )
         return
 
-    session = await get_latest_session()
+    session = await get_latest_done_session()
     if not session:
-        await update.message.reply_text("⚠️ Belum ada data scan selesai.")
+        await update.message.reply_text(
+            "⚠️ Belum ada data scan. Jalankan /scan atau /soloscan terlebih dahulu."
+        )
         return
 
     ips = await get_ips_for_nullroute(session["id"], config.nullroute_min_score)

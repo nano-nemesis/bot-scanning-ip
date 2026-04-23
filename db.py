@@ -230,6 +230,17 @@ async def get_session_history(limit: int = 7) -> list[dict]:
         return [dict(r) for r in rows]
 
 
+async def get_latest_done_session() -> dict | None:
+    """Return most recent done session of any type (full or solo)."""
+    async with aiosqlite.connect(config.db_path) as db:
+        db.row_factory = aiosqlite.Row
+        cursor = await db.execute(
+            "SELECT * FROM scan_sessions WHERE status='done' ORDER BY id DESC LIMIT 1"
+        )
+        row = await cursor.fetchone()
+        return dict(row) if row else None
+
+
 async def get_high_score_ips(session_id: int, threshold: int, limit: int = 15) -> list[dict]:
     async with aiosqlite.connect(config.db_path) as db:
         db.row_factory = aiosqlite.Row
