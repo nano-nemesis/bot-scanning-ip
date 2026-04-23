@@ -41,7 +41,7 @@ async def login_submit(
             value=token,
             max_age=web_config.session_max_age,
             httponly=True,
-            secure=not web_config.debug,
+            secure=web_config.cookie_secure,
             samesite="lax",
         )
         return response

@@ -13,6 +13,7 @@ class WebConfig:
     host: str
     port: int
     debug: bool
+    cookie_secure: bool
     alert_threshold: int
     nullroute_min_score: int
     as_number: str
@@ -37,6 +38,7 @@ def load_web_config() -> WebConfig:
         host=os.getenv("WEB_HOST", "127.0.0.1"),
         port=int(os.getenv("WEB_PORT", "8080")),
         debug=os.getenv("WEB_DEBUG", "false").lower() == "true",
+        cookie_secure=os.getenv("WEB_COOKIE_SECURE", "false").lower() == "true",
         alert_threshold=int(os.getenv("ALERT_THRESHOLD", "80")),
         nullroute_min_score=int(os.getenv("NULLROUTE_MIN_SCORE", "50")),
         as_number=os.getenv("AS_NUMBER", "AS211407"),
