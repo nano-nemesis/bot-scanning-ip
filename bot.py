@@ -134,8 +134,7 @@ async def callback_approval(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         pass
 
 
-def create_application(token: str) -> Application:
-    app = Application.builder().token(token).build()
+def register_handlers(app: Application) -> None:
     app.add_handler(CommandHandler("start", cmd_start))
     app.add_handler(CommandHandler("scan", cmd_scan))
     app.add_handler(CommandHandler("report", cmd_report))
@@ -143,4 +142,9 @@ def create_application(token: str) -> Application:
     app.add_handler(CommandHandler("check", cmd_check))
     app.add_handler(CommandHandler("history", cmd_history))
     app.add_handler(CallbackQueryHandler(callback_approval, pattern="^(approve_scan|skip_scan)$"))
+
+
+def create_application(token: str) -> Application:
+    app = Application.builder().token(token).build()
+    register_handlers(app)
     return app

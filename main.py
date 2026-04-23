@@ -3,7 +3,7 @@ import logging
 
 from telegram.ext import Application
 
-from bot import create_application
+from bot import register_handlers
 from config import config
 from db import init_db
 from scheduler import setup_scheduler
@@ -28,6 +28,7 @@ def main() -> None:
         .post_init(post_init)
         .build()
     )
+    register_handlers(app)
 
     app.run_polling(drop_pending_updates=True)
 
