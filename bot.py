@@ -71,7 +71,7 @@ async def cmd_scan(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         return
 
     await update.message.reply_text("🔄 Memulai scan manual...")
-    asyncio.get_event_loop().create_task(run_scan(context.bot))
+    asyncio.create_task(run_scan(context.bot))
 
 
 async def cmd_report(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:

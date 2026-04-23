@@ -170,7 +170,7 @@ async def handle_approval(bot: Bot, callback_data: str, message_id: int) -> str:
         task.cancel()
 
     if callback_data == "approve_scan":
-        asyncio.get_event_loop().create_task(run_scan(bot))
+        asyncio.create_task(run_scan(bot))
         return "✅ Scan diapprove — dimulai sekarang!"
     else:
         return "⏭ Scan dibatalkan untuk malam ini."
@@ -196,16 +196,17 @@ async def job_morning_report(bot: Bot) -> None:
 
 
 def setup_scheduler(bot: Bot) -> AsyncIOScheduler:
+    loop = asyncio.get_running_loop()
     scheduler = AsyncIOScheduler(timezone="Asia/Jakarta")
 
     scheduler.add_job(
-        lambda: asyncio.ensure_future(job_midnight_notify(bot)),
+        lambda: asyncio.run_coroutine_threadsafe(job_midnight_notify(bot), loop),
         trigger=CronTrigger(hour=0, minute=0, timezone="Asia/Jakarta"),
         id="midnight_notify",
         replace_existing=True,
     )
     scheduler.add_job(
-        lambda: asyncio.ensure_future(job_morning_report(bot)),
+        lambda: asyncio.run_coroutine_threadsafe(job_morning_report(bot), loop),
         trigger=CronTrigger(hour=9, minute=0, timezone="Asia/Jakarta"),
         id="morning_report",
         replace_existing=True,
