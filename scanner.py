@@ -182,6 +182,8 @@ async def check_ip_voidip_mock(ip: str) -> dict:
 
 async def scan_single_ip(ip: str) -> dict | None:
     """Check a single IP via AbuseIPDB /check endpoint. Returns ip_dict or None on error."""
+    from ripe import lookup_ip_prefix
+
     headers = {"Key": config.abuseipdb_api_key, "Accept": "application/json"}
     params = {"ipAddress": ip, "maxAgeInDays": str(config.max_age_days), "verbose": ""}
 
@@ -204,7 +206,10 @@ async def scan_single_ip(ip: str) -> dict | None:
     for r in d.get("reports", []):
         all_cats.extend(r.get("categories", []))
 
-    voidip = await check_ip_voidip_mock(ip)
+    prefix, voidip = await asyncio.gather(
+        lookup_ip_prefix(ip),
+        check_ip_voidip_mock(ip),
+    )
 
     return {
         "ip_address": d.get("ipAddress", ip),
@@ -212,10 +217,10 @@ async def scan_single_ip(ip: str) -> dict | None:
         "num_reports": d.get("totalReports", 0),
         "last_reported": d.get("lastReportedAt"),
         "country_code": d.get("countryCode"),
-        "prefix": "-",
-        "categories": json.dumps(list(set(all_cats))),
+        "prefix": prefix,
+        "categories": list(set(all_cats)),
         "voidip_score": voidip["score"],
-        "voidip_tags": json.dumps(voidip["tags"]),
+        "voidip_tags": voidip["tags"],
     }
 
 

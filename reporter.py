@@ -98,19 +98,22 @@ def format_offenders_block(offenders: list[dict]) -> str:
     return "\n".join(lines)
 
 
-def format_actionable_ip(ip: dict) -> str:
+def _parse_list_field(value) -> list:
+    if isinstance(value, list):
+        return value
     try:
-        cats = json.loads(ip.get("categories") or "[]")
+        return json.loads(value or "[]")
     except Exception:
-        cats = []
+        return []
+
+
+def format_actionable_ip(ip: dict) -> str:
+    cats = _parse_list_field(ip.get("categories"))
     cat_names = "\n".join(
         f"  • {CATEGORY_NAMES.get(c, f'Cat {c}')}" for c in cats
     ) or "  -"
 
-    try:
-        vtags = json.loads(ip.get("voidip_tags") or "[]")
-    except Exception:
-        vtags = []
+    vtags = _parse_list_field(ip.get("voidip_tags"))
 
     action = _recommended_action(ip.get("abuse_score", 0))
 

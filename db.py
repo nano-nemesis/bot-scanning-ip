@@ -16,7 +16,8 @@ CREATE TABLE IF NOT EXISTS scan_sessions (
     finished_at    TEXT,
     total_prefixes INTEGER DEFAULT 0,
     total_ips      INTEGER DEFAULT 0,
-    status         TEXT DEFAULT 'running'
+    status         TEXT DEFAULT 'running',
+    session_type   TEXT DEFAULT 'full'
 );
 
 CREATE TABLE IF NOT EXISTS prefix_results (
@@ -67,15 +68,22 @@ async def init_db() -> None:
     os.makedirs(os.path.dirname(config.db_path) or ".", exist_ok=True)
     async with aiosqlite.connect(config.db_path) as db:
         await db.executescript(CREATE_TABLES)
-        await db.commit()
+        # migrate: add session_type if missing (safe on existing DB)
+        try:
+            await db.execute(
+                "ALTER TABLE scan_sessions ADD COLUMN session_type TEXT DEFAULT 'full'"
+            )
+            await db.commit()
+        except Exception:
+            pass
     logger.info("Database initialized at %s", config.db_path)
 
 
-async def create_session() -> int:
+async def create_session(session_type: str = "full") -> int:
     async with aiosqlite.connect(config.db_path) as db:
         cursor = await db.execute(
-            "INSERT INTO scan_sessions (started_at, status) VALUES (?, 'running')",
-            (_now(),),
+            "INSERT INTO scan_sessions (started_at, status, session_type) VALUES (?, 'running', ?)",
+            (_now(), session_type),
         )
         await db.commit()
         return cursor.lastrowid
@@ -159,10 +167,11 @@ async def save_category_stats(
 
 
 async def get_latest_session() -> dict | None:
+    """Return the most recent completed full-scan session."""
     async with aiosqlite.connect(config.db_path) as db:
         db.row_factory = aiosqlite.Row
         cursor = await db.execute(
-            "SELECT * FROM scan_sessions WHERE status='done' ORDER BY id DESC LIMIT 1"
+            "SELECT * FROM scan_sessions WHERE status='done' AND session_type='full' ORDER BY id DESC LIMIT 1"
         )
         row = await cursor.fetchone()
         return dict(row) if row else None
@@ -208,17 +217,32 @@ async def get_category_breakdown(session_id: int) -> list[dict]:
         return [dict(r) for r in rows]
 
 
-async def get_session_history(days: int = 7) -> list[dict]:
+async def get_session_history(limit: int = 7) -> list[dict]:
     async with aiosqlite.connect(config.db_path) as db:
         db.row_factory = aiosqlite.Row
         cursor = await db.execute(
             """SELECT * FROM scan_sessions
                WHERE status IN ('done','failed')
                ORDER BY id DESC LIMIT ?""",
-            (days,),
+            (limit,),
         )
         rows = await cursor.fetchall()
         return [dict(r) for r in rows]
+
+
+async def get_ip_detail_any(ip_address: str) -> dict | None:
+    """Search ip_results across all sessions, return the most recent match."""
+    async with aiosqlite.connect(config.db_path) as db:
+        db.row_factory = aiosqlite.Row
+        cursor = await db.execute(
+            """SELECT ip.* FROM ip_results ip
+               JOIN scan_sessions s ON s.id = ip.session_id
+               WHERE ip.ip_address=?
+               ORDER BY ip.session_id DESC LIMIT 1""",
+            (ip_address,),
+        )
+        row = await cursor.fetchone()
+        return dict(row) if row else None
 
 
 async def get_any_session() -> dict | None:

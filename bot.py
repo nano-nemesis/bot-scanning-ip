@@ -11,9 +11,18 @@ from telegram.ext import (
 )
 
 from config import config
-from db import get_any_session, get_ip_detail, get_latest_session, get_session_history
+from db import (
+    create_session,
+    finish_session,
+    get_any_session,
+    get_ip_detail_any,
+    get_latest_session,
+    get_session_history,
+    save_category_stats,
+    save_ip_results,
+)
 from reporter import build_daily_report, format_actionable_ip
-from scanner import scan_single_ip
+from scanner import CATEGORY_NAMES, scan_single_ip
 from scheduler import handle_approval, run_scan
 
 _IP_RE = re.compile(
@@ -89,16 +98,11 @@ async def cmd_check(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         return
 
     ip = args[0].strip()
-    session = await get_latest_session()
-    if not session:
-        await update.message.reply_text("⚠️ Belum ada data scan selesai.")
-        return
-
-    ip_data = await get_ip_detail(session["id"], ip)
+    ip_data = await get_ip_detail_any(ip)
     if not ip_data:
         await update.message.reply_text(
-            f"ℹ️ IP `{ip}` tidak ditemukan dalam sesi #{session['id']}.\n"
-            f"IP tersebut kemungkinan bersih (tidak ada laporan).",
+            f"ℹ️ IP `{ip}` tidak ditemukan di database.\n"
+            f"Gunakan /soloscan untuk scan langsung ke AbuseIPDB.",
             parse_mode="Markdown",
         )
         return
@@ -115,10 +119,11 @@ async def cmd_history(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
 
     lines = ["📋 *7 Sesi Scan Terakhir:*\n"]
     for s in sessions:
-        icon = {"done": "✅", "running": "🔄", "failed": "❌"}.get(s.get("status",""), "❓")
+        icon = {"done": "✅", "running": "🔄", "failed": "❌"}.get(s.get("status", ""), "❓")
+        tag = "🔎solo" if s.get("session_type") == "solo" else "📡full"
         lines.append(
-            f"{icon} #{s['id']} | {s.get('started_at','?')[:10]} | "
-            f"IP:{s.get('total_ips',0):,} | {s.get('status','?')}"
+            f"{icon} #{s['id']} | {tag} | {s.get('started_at','?')[:10]} | "
+            f"IP:{s.get('total_ips',0):,}"
         )
 
     await update.message.reply_text("\n".join(lines), parse_mode="Markdown")
@@ -139,15 +144,23 @@ async def cmd_solo_scan(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         )
         return
 
-    await update.message.reply_text(f"🔍 Scanning IP `{ip}`\\.\\.\\.", parse_mode="MarkdownV2")
+    await update.message.reply_text(f"🔍 Scanning IP `{ip}`...", parse_mode="Markdown")
 
     result = await scan_single_ip(ip)
     if result is None:
         await update.message.reply_text(
-            f"❌ Gagal mengambil data untuk `{ip}`\\. Cek API key atau coba lagi\\.",
-            parse_mode="MarkdownV2",
+            f"❌ Gagal mengambil data untuk `{ip}`. Cek API key atau coba lagi.",
         )
         return
+
+    # Simpan ke DB sebagai solo session
+    session_id = await create_session(session_type="solo")
+    await save_ip_results(session_id, result["prefix"], [result])
+    cats = result.get("categories", [])
+    if cats:
+        cat_stats = {c: (CATEGORY_NAMES.get(c, f"Category {c}"), 1) for c in cats}
+        await save_category_stats(session_id, cat_stats)
+    await finish_session(session_id, total_prefixes=0, total_ips=1, status="done")
 
     await update.message.reply_text(format_actionable_ip(result), parse_mode="Markdown")
 
