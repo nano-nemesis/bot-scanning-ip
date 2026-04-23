@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import re
 
 from telegram import Update
 from telegram.ext import (
@@ -12,7 +13,13 @@ from telegram.ext import (
 from config import config
 from db import get_any_session, get_ip_detail, get_latest_session, get_session_history
 from reporter import build_daily_report, format_actionable_ip
+from scanner import scan_single_ip
 from scheduler import handle_approval, run_scan
+
+_IP_RE = re.compile(
+    r"^(\d{1,3}\.){3}\d{1,3}$"
+    r"|^[0-9a-fA-F:]{2,39}$"
+)
 
 logger = logging.getLogger(__name__)
 
@@ -26,9 +33,10 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         "👋 *AS211407 IP Abuse Scanner Bot*\n\n"
         "Perintah tersedia:\n"
         "/scan — Trigger scan manual (admin)\n"
+        "/soloscan `<IP>` — Scan 1 IP secara langsung\n"
         "/report — Kirim laporan terbaru\n"
         "/status — Status sesi scan terakhir\n"
-        "/check `<IP>` — Cek detail IP\n"
+        "/check `<IP>` — Cek detail IP dari DB\n"
         "/history — 7 sesi scan terakhir\n"
     )
     await update.message.reply_text(text, parse_mode="Markdown")
@@ -116,6 +124,34 @@ async def cmd_history(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     await update.message.reply_text("\n".join(lines), parse_mode="Markdown")
 
 
+async def cmd_solo_scan(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if not context.args:
+        await update.message.reply_text(
+            "Penggunaan: `/soloscan <IP>`\nContoh: `/soloscan 1.2.3.4`",
+            parse_mode="Markdown",
+        )
+        return
+
+    ip = context.args[0].strip()
+    if not _IP_RE.match(ip):
+        await update.message.reply_text(
+            f"⚠️ Format IP tidak valid: `{ip}`", parse_mode="Markdown"
+        )
+        return
+
+    await update.message.reply_text(f"🔍 Scanning IP `{ip}`\\.\\.\\.", parse_mode="MarkdownV2")
+
+    result = await scan_single_ip(ip)
+    if result is None:
+        await update.message.reply_text(
+            f"❌ Gagal mengambil data untuk `{ip}`\\. Cek API key atau coba lagi\\.",
+            parse_mode="MarkdownV2",
+        )
+        return
+
+    await update.message.reply_text(format_actionable_ip(result), parse_mode="Markdown")
+
+
 async def callback_approval(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     query = update.callback_query
     await query.answer()
@@ -137,6 +173,7 @@ async def callback_approval(update: Update, context: ContextTypes.DEFAULT_TYPE) 
 def register_handlers(app: Application) -> None:
     app.add_handler(CommandHandler("start", cmd_start))
     app.add_handler(CommandHandler("scan", cmd_scan))
+    app.add_handler(CommandHandler("soloscan", cmd_solo_scan))
     app.add_handler(CommandHandler("report", cmd_report))
     app.add_handler(CommandHandler("status", cmd_status))
     app.add_handler(CommandHandler("check", cmd_check))

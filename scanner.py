@@ -180,6 +180,45 @@ async def check_ip_voidip_mock(ip: str) -> dict:
     }
 
 
+async def scan_single_ip(ip: str) -> dict | None:
+    """Check a single IP via AbuseIPDB /check endpoint. Returns ip_dict or None on error."""
+    headers = {"Key": config.abuseipdb_api_key, "Accept": "application/json"}
+    params = {"ipAddress": ip, "maxAgeInDays": str(config.max_age_days), "verbose": ""}
+
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(
+                ABUSEIPDB_CHECK_IP, headers=headers, params=params,
+                timeout=aiohttp.ClientTimeout(total=15),
+            ) as resp:
+                if resp.status != 200:
+                    logger.error("AbuseIPDB solo scan error %d for %s", resp.status, ip)
+                    return None
+                data = await resp.json()
+    except (aiohttp.ClientError, asyncio.TimeoutError) as exc:
+        logger.error("Network error on solo scan %s: %s", ip, exc)
+        return None
+
+    d = data.get("data", {})
+    all_cats: list[int] = []
+    for r in d.get("reports", []):
+        all_cats.extend(r.get("categories", []))
+
+    voidip = await check_ip_voidip_mock(ip)
+
+    return {
+        "ip_address": d.get("ipAddress", ip),
+        "abuse_score": d.get("abuseConfidenceScore", 0),
+        "num_reports": d.get("totalReports", 0),
+        "last_reported": d.get("lastReportedAt"),
+        "country_code": d.get("countryCode"),
+        "prefix": "-",
+        "categories": json.dumps(list(set(all_cats))),
+        "voidip_score": voidip["score"],
+        "voidip_tags": json.dumps(voidip["tags"]),
+    }
+
+
 async def validate_abuseipdb_token() -> bool:
     """Quick validation: check a well-known IP to verify the API key works."""
     headers = {"Key": config.abuseipdb_api_key, "Accept": "application/json"}
