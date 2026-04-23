@@ -329,3 +329,84 @@ async def get_ip_detail(session_id: int, ip_address: str) -> dict | None:
         )
         row = await cursor.fetchone()
         return dict(row) if row else None
+
+
+_IP_SORT_WHITELIST = {"abuse_score", "num_reports", "ip_address", "country_code", "scanned_at"}
+
+
+async def get_ips_paginated(
+    session_id: int,
+    page: int = 1,
+    per_page: int = 50,
+    min_score: int | None = None,
+    max_score: int | None = None,
+    country: str | None = None,
+    search_ip: str | None = None,
+    sort_by: str = "abuse_score",
+    sort_dir: str = "DESC",
+) -> tuple[list[dict], int]:
+    if sort_by not in _IP_SORT_WHITELIST:
+        sort_by = "abuse_score"
+    if sort_dir.upper() not in ("ASC", "DESC"):
+        sort_dir = "DESC"
+
+    conditions = ["session_id = ?"]
+    params: list = [session_id]
+
+    if min_score is not None:
+        conditions.append("abuse_score >= ?")
+        params.append(min_score)
+    if max_score is not None:
+        conditions.append("abuse_score <= ?")
+        params.append(max_score)
+    if country:
+        conditions.append("UPPER(country_code) = ?")
+        params.append(country.upper())
+    if search_ip:
+        conditions.append("ip_address LIKE ?")
+        params.append(f"%{search_ip}%")
+
+    where = " AND ".join(conditions)
+
+    async with aiosqlite.connect(config.db_path) as db:
+        db.row_factory = aiosqlite.Row
+        count_cur = await db.execute(
+            f"SELECT COUNT(*) FROM ip_results WHERE {where}", params
+        )
+        total = (await count_cur.fetchone())[0]
+
+        offset = (page - 1) * per_page
+        cursor = await db.execute(
+            f"SELECT * FROM ip_results WHERE {where} "
+            f"ORDER BY {sort_by} {sort_dir} LIMIT ? OFFSET ?",
+            params + [per_page, offset],
+        )
+        rows = await cursor.fetchall()
+        return [dict(r) for r in rows], total
+
+
+async def get_session_prefix_stats(session_id: int) -> list[dict]:
+    async with aiosqlite.connect(config.db_path) as db:
+        db.row_factory = aiosqlite.Row
+        cursor = await db.execute(
+            "SELECT * FROM prefix_results WHERE session_id=? ORDER BY max_score DESC",
+            (session_id,),
+        )
+        rows = await cursor.fetchall()
+        return [dict(r) for r in rows]
+
+
+async def search_ip_across_sessions(ip_address: str, limit: int = 20) -> list[dict]:
+    async with aiosqlite.connect(config.db_path) as db:
+        db.row_factory = aiosqlite.Row
+        cursor = await db.execute(
+            """SELECT ir.*, s.started_at AS session_started,
+                      s.status AS session_status, s.session_type
+               FROM ip_results ir
+               JOIN scan_sessions s ON s.id = ir.session_id
+               WHERE ir.ip_address = ?
+               ORDER BY ir.session_id DESC LIMIT ?""",
+            (ip_address, limit),
+        )
+        rows = await cursor.fetchall()
+        return [dict(r) for r in rows]

@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}Scan Sessions — AS{{ as_number }}{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-6">
+  <div>
+    <h1 class="text-2xl font-bold">Scan Sessions</h1>
+    <p class="text-sm text-base-content/50">Riwayat semua sesi scanning</p>
+  </div>
+</div>
+
+{% if error %}
+<div class="alert alert-error mb-4">{{ error }}</div>
+{% endif %}
+
+<div class="card bg-base-200 border border-base-300">
+  <div class="card-body p-4">
+    <div class="overflow-x-auto">
+      <table class="table table-sm table-zebra">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Tipe</th>
+            <th>Status</th>
+            <th>Mulai</th>
+            <th>Selesai</th>
+            <th class="text-right">Prefix</th>
+            <th class="text-right">Total IP</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in sessions %}
+          <tr class="hover">
+            <td class="font-mono text-xs text-base-content/60">#{{ s.id }}</td>
+            <td>
+              {% if s.session_type == 'solo' %}
+                <span class="badge badge-outline badge-sm">solo</span>
+              {% else %}
+                <span class="badge badge-primary badge-sm badge-outline">full</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if s.status == 'done' %}
+                <span class="badge badge-success badge-sm">✓ done</span>
+              {% elif s.status == 'running' %}
+                <span class="badge badge-info badge-sm">⟳ running</span>
+              {% else %}
+                <span class="badge badge-error badge-sm">✗ failed</span>
+              {% endif %}
+            </td>
+            <td class="text-xs font-mono">{{ s.started_at[:16].replace("T"," ") if s.started_at else "-" }}</td>
+            <td class="text-xs font-mono">{{ s.finished_at[:16].replace("T"," ") if s.finished_at else "-" }}</td>
+            <td class="text-right text-xs">{{ s.total_prefixes or 0 }}</td>
+            <td class="text-right text-xs">{{ "{:,}".format(s.total_ips or 0) }}</td>
+            <td>
+              <a href="/sessions/{{ s.id }}" class="btn btn-xs btn-ghost">Detail →</a>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="8" class="text-center text-base-content/40 py-8">
+              Belum ada sesi scan. Gunakan /scan di Telegram.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

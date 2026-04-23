@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% block title %}IP List — AS{{ as_number }}{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-4">
+  <div>
+    <h1 class="text-2xl font-bold">IP List</h1>
+    <p class="text-sm text-base-content/50">
+      Sesi #{{ session_id or "—" }} &middot; {{ "{:,}".format(total) }} IP ditemukan
+    </p>
+  </div>
+</div>
+
+{# ── Filter form ── #}
+<div class="card bg-base-200 border border-base-300 mb-4">
+  <div class="card-body p-4">
+    <form id="filter-form"
+          hx-get="/ips"
+          hx-target="#ip-tbody"
+          hx-push-url="true"
+          hx-indicator="#spinner"
+          class="flex flex-wrap gap-3 items-end">
+
+      {# Hidden fields: preserve session and pagination context #}
+      {% if session_id %}<input type="hidden" name="session" value="{{ session_id }}">{% endif %}
+      <input type="hidden" name="page" value="1">
+
+      <label class="form-control">
+        <div class="label py-0.5"><span class="label-text text-xs">Cari IP</span></div>
+        <input type="text" name="search_ip" value="{{ search_ip }}"
+               placeholder="1.2.3.4" class="input input-bordered input-sm w-36"
+               hx-trigger="input delay:400ms" hx-include="#filter-form">
+      </label>
+
+      <label class="form-control">
+        <div class="label py-0.5"><span class="label-text text-xs">Min Score</span></div>
+        <input type="number" name="min_score" value="{{ min_score or '' }}"
+               placeholder="0" min="0" max="100" class="input input-bordered input-sm w-24">
+      </label>
+
+      <label class="form-control">
+        <div class="label py-0.5"><span class="label-text text-xs">Max Score</span></div>
+        <input type="number" name="max_score" value="{{ max_score or '' }}"
+               placeholder="100" min="0" max="100" class="input input-bordered input-sm w-24">
+      </label>
+
+      <label class="form-control">
+        <div class="label py-0.5"><span class="label-text text-xs">Negara</span></div>
+        <input type="text" name="country" value="{{ country }}"
+               placeholder="CN" maxlength="2" class="input input-bordered input-sm w-20 uppercase">
+      </label>
+
+      <label class="form-control">
+        <div class="label py-0.5"><span class="label-text text-xs">Sort</span></div>
+        <select name="sort_by" class="select select-bordered select-sm">
+          {% for opt in [("abuse_score","Score"),("num_reports","Reports"),("ip_address","IP"),("country_code","Negara"),("scanned_at","Tanggal")] %}
+          <option value="{{ opt[0] }}" {% if sort_by == opt[0] %}selected{% endif %}>{{ opt[1] }}</option>
+          {% endfor %}
+        </select>
+      </label>
+
+      <label class="form-control">
+        <div class="label py-0.5"><span class="label-text text-xs">Arah</span></div>
+        <select name="sort_dir" class="select select-bordered select-sm w-24">
+          <option value="DESC" {% if sort_dir == "DESC" %}selected{% endif %}>↓ DESC</option>
+          <option value="ASC" {% if sort_dir == "ASC" %}selected{% endif %}>↑ ASC</option>
+        </select>
+      </label>
+
+      <label class="form-control">
+        <div class="label py-0.5"><span class="label-text text-xs">Per halaman</span></div>
+        <select name="per_page" class="select select-bordered select-sm w-20">
+          {% for opt in per_page_options %}
+          <option value="{{ opt }}" {% if per_page == opt %}selected{% endif %}>{{ opt }}</option>
+          {% endfor %}
+        </select>
+      </label>
+
+      <div class="flex gap-2 items-end">
+        <button type="submit" class="btn btn-primary btn-sm">Filter</button>
+        <a href="/ips{% if session_id %}?session={{ session_id }}{% endif %}" class="btn btn-ghost btn-sm">Reset</a>
+        <span id="spinner" class="htmx-indicator loading loading-spinner loading-sm text-primary"></span>
+      </div>
+    </form>
+  </div>
+</div>
+
+{# ── IP Table ── #}
+<div class="card bg-base-200 border border-base-300">
+  <div class="card-body p-4">
+    <div class="overflow-x-auto">
+      <table class="table table-xs table-zebra">
+        <thead>
+          <tr>
+            <th>IP Address</th>
+            <th>Score</th>
+            <th>Reports</th>
+            <th>Negara</th>
+            <th>Prefix</th>
+            <th>Terakhir Dilaporkan</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="ip-tbody">
+          {% include "partials/ip_rows.html" %}
+        </tbody>
+      </table>
+    </div>
+
+    {# Pagination #}
+    {% if total_pages > 1 %}
+    <div class="flex justify-center mt-4">
+      <div class="join">
+        {% if page > 1 %}
+        <a href="?{{ request.query_params | replace('page=' ~ page, 'page=' ~ (page-1)) }}"
+           class="join-item btn btn-sm">«</a>
+        {% endif %}
+
+        {% for p in range([1, page-2]|max, [total_pages+1, page+3]|min) %}
+        <a href="?{{ request.query_params | replace('page=' ~ page, 'page=' ~ p) }}"
+           class="join-item btn btn-sm {% if p == page %}btn-active{% endif %}">{{ p }}</a>
+        {% endfor %}
+
+        {% if page < total_pages %}
+        <a href="?{{ request.query_params | replace('page=' ~ page, 'page=' ~ (page+1)) }}"
+           class="join-item btn btn-sm">»</a>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}

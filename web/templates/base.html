@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}AS{{ as_number }} Scanner{% endblock %}</title>
+  <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/htmx.org@2.0.4" defer></script>
+  {% block head %}{% endblock %}
+</head>
+<body class="bg-base-100 min-h-screen">
+
+{# ───────────── Drawer (sidebar) layout ───────────── #}
+<div class="drawer lg:drawer-open">
+  <input id="nav-drawer" type="checkbox" class="drawer-toggle">
+
+  {# ── Main content ── #}
+  <div class="drawer-content flex flex-col min-h-screen">
+
+    {# Top navbar (mobile only) #}
+    <div class="navbar bg-base-200 border-b border-base-300 lg:hidden sticky top-0 z-30">
+      <label for="nav-drawer" class="btn btn-ghost btn-square drawer-button">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block w-5 h-5 stroke-current">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+        </svg>
+      </label>
+      <span class="font-bold text-base ml-2">🛡 AS{{ as_number }}</span>
+    </div>
+
+    {# Page content #}
+    <main class="flex-1 p-4 md:p-6">
+      {% block content %}{% endblock %}
+    </main>
+
+    <footer class="py-3 text-center text-xs text-base-content/30 border-t border-base-300">
+      AS{{ as_number }} IP Abuse Scanner
+    </footer>
+  </div>
+
+  {# ── Sidebar ── #}
+  <div class="drawer-side z-40">
+    <label for="nav-drawer" aria-label="close sidebar" class="drawer-overlay"></label>
+    <aside class="w-60 min-h-screen bg-base-200 border-r border-base-300 flex flex-col">
+
+      {# Logo #}
+      <div class="p-5 border-b border-base-300">
+        <div class="flex items-center gap-2">
+          <span class="text-2xl">🛡</span>
+          <div>
+            <p class="font-bold text-sm leading-tight">AS{{ as_number }}</p>
+            <p class="text-xs text-base-content/50 leading-tight">IP Abuse Scanner</p>
+          </div>
+        </div>
+      </div>
+
+      {# Navigation #}
+      <ul class="menu menu-md p-3 flex-1 gap-0.5">
+        <li class="menu-title text-xs opacity-40 pt-2">MENU</li>
+        <li>
+          <a href="/" class="{% if active_page == 'dashboard' %}active{% endif %}">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+            </svg>
+            Dashboard
+          </a>
+        </li>
+        <li>
+          <a href="/sessions" class="{% if active_page == 'sessions' %}active{% endif %}">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+            </svg>
+            Scan Sessions
+          </a>
+        </li>
+        <li>
+          <a href="/ips" class="{% if active_page == 'ips' %}active{% endif %}">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+            </svg>
+            IP List
+          </a>
+        </li>
+      </ul>
+
+      {# User + Logout #}
+      <div class="p-3 border-t border-base-300">
+        <div class="flex items-center justify-between gap-2">
+          <div class="flex items-center gap-2 min-w-0">
+            <div class="avatar placeholder">
+              <div class="bg-neutral text-neutral-content rounded-full w-7">
+                <span class="text-xs">{{ current_user[0]|upper }}</span>
+              </div>
+            </div>
+            <span class="text-sm truncate">{{ current_user }}</span>
+          </div>
+          <form method="post" action="/logout">
+            <button class="btn btn-ghost btn-xs" title="Logout">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+              </svg>
+            </button>
+          </form>
+        </div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+{% block scripts %}{% endblock %}
+</body>
+</html>

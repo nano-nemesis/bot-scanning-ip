@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login — AS IP Scanner</title>
+  <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-base-100 min-h-screen flex items-center justify-center">
+  <div class="card w-full max-w-sm bg-base-200 shadow-2xl border border-base-300">
+    <div class="card-body gap-4">
+
+      <div class="text-center mb-2">
+        <div class="text-4xl mb-2">🛡</div>
+        <h1 class="text-xl font-bold">IP Abuse Scanner</h1>
+        <p class="text-sm text-base-content/50">Masuk untuk melanjutkan</p>
+      </div>
+
+      {% if error %}
+      <div class="alert alert-error text-sm py-2">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+        </svg>
+        {{ error }}
+      </div>
+      {% endif %}
+
+      <form method="post" action="/login" class="flex flex-col gap-3">
+        <label class="form-control w-full">
+          <div class="label pb-1"><span class="label-text text-xs">Username</span></div>
+          <input type="text" name="username" placeholder="Username"
+                 class="input input-bordered input-sm w-full" required autofocus>
+        </label>
+
+        <label class="form-control w-full">
+          <div class="label pb-1"><span class="label-text text-xs">Password</span></div>
+          <input type="password" name="password" placeholder="Password"
+                 class="input input-bordered input-sm w-full" required>
+        </label>
+
+        <button type="submit" class="btn btn-primary btn-sm mt-1">
+          Masuk
+        </button>
+      </form>
+
+    </div>
+  </div>
+</body>
+</html>

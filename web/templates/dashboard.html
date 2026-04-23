@@ -1,0 +1,242 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — AS{{ as_number }}{% endblock %}
+
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+{% endblock %}
+
+{% block content %}
+
+{# ── Page header ── #}
+<div class="flex items-center justify-between mb-6">
+  <div>
+    <h1 class="text-2xl font-bold">Dashboard</h1>
+    <p class="text-sm text-base-content/50">Overview AS{{ as_number }}</p>
+  </div>
+  {% if session %}
+  <div class="text-right text-xs text-base-content/40">
+    <div>Sesi #{{ session.id }}</div>
+    <div>{{ session.started_at[:10] if session.started_at }}</div>
+  </div>
+  {% endif %}
+</div>
+
+{% if not session %}
+<div class="alert alert-warning">
+  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+  </svg>
+  Belum ada data scan. Gunakan <code>/scan</code> di Telegram untuk memulai.
+</div>
+{% else %}
+
+{# ── Stat Cards ── #}
+{% set total_ips = session.total_ips or 0 %}
+{% set reported = summary.total_reported_ips or 0 %}
+{% set avg_score = summary.avg_score or 0 %}
+{% set max_score = summary.max_score or 0 %}
+{% set pct = (reported / total_ips * 100) if total_ips > 0 else 0 %}
+
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+  <div class="stat bg-base-200 rounded-xl border border-base-300">
+    <div class="stat-figure text-primary">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h.5A2.5 2.5 0 0020 5.5v-1.565"/>
+      </svg>
+    </div>
+    <div class="stat-title text-xs">Total IP</div>
+    <div class="stat-value text-lg">{{ "{:,}".format(total_ips) }}</div>
+    <div class="stat-desc">{{ session.total_prefixes or 0 }} prefix</div>
+  </div>
+
+  <div class="stat bg-base-200 rounded-xl border border-base-300">
+    <div class="stat-figure text-warning">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+      </svg>
+    </div>
+    <div class="stat-title text-xs">IP Dilaporkan</div>
+    <div class="stat-value text-lg text-warning">{{ "{:,}".format(reported) }}</div>
+    <div class="stat-desc">{{ "%.2f"|format(pct) }}% dari total</div>
+  </div>
+
+  <div class="stat bg-base-200 rounded-xl border border-base-300">
+    <div class="stat-figure text-info">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+      </svg>
+    </div>
+    <div class="stat-title text-xs">Avg Score</div>
+    <div class="stat-value text-lg text-info">{{ "%.1f"|format(avg_score) }}</div>
+    <div class="stat-desc">rata-rata abuse score</div>
+  </div>
+
+  <div class="stat bg-base-200 rounded-xl border border-base-300">
+    <div class="stat-figure text-error">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+      </svg>
+    </div>
+    <div class="stat-title text-xs">Max Score</div>
+    <div class="stat-value text-lg text-error">{{ max_score }}</div>
+    <div class="stat-desc">
+      {% if max_score >= alert_threshold %}<span class="text-error">⚠ Di atas threshold</span>{% else %}dalam batas aman{% endif %}
+    </div>
+  </div>
+</div>
+
+{# ── Charts row ── #}
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+  <div class="card bg-base-200 border border-base-300">
+    <div class="card-body p-4">
+      <h2 class="card-title text-sm font-semibold mb-2">📈 Tren Mingguan</h2>
+      <div class="h-48">
+        <canvas id="weeklyChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="card bg-base-200 border border-base-300">
+    <div class="card-body p-4">
+      <h2 class="card-title text-sm font-semibold mb-2">📂 Kategori Laporan</h2>
+      <div class="h-48">
+        <canvas id="categoryChart"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+{# ── Top Offenders ── #}
+<div class="card bg-base-200 border border-base-300">
+  <div class="card-body p-4">
+    <div class="flex items-center justify-between mb-3">
+      <h2 class="card-title text-sm font-semibold">🔴 Top 10 IP Terburuk</h2>
+      <a href="/ips" class="btn btn-xs btn-outline">Lihat Semua →</a>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="table table-xs table-zebra">
+        <thead>
+          <tr>
+            <th>IP Address</th>
+            <th>Score</th>
+            <th>Reports</th>
+            <th>Negara</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for ip in offenders %}
+          <tr class="hover">
+            <td>
+              <a href="/ips/{{ ip.ip_address }}" class="link link-hover font-mono text-xs">{{ ip.ip_address }}</a>
+            </td>
+            <td>
+              {% if ip.abuse_score >= 80 %}
+                <span class="badge badge-error badge-sm">{{ ip.abuse_score }}</span>
+              {% elif ip.abuse_score >= 50 %}
+                <span class="badge badge-warning badge-sm">{{ ip.abuse_score }}</span>
+              {% else %}
+                <span class="badge badge-success badge-sm">{{ ip.abuse_score }}</span>
+              {% endif %}
+            </td>
+            <td class="text-xs">{{ ip.num_reports }}</td>
+            <td class="text-xs">{{ ip.country_code or "-" }}</td>
+            <td>
+              {% if ip.abuse_score >= 80 %}
+                <span class="text-error text-xs font-bold">🚫 BLOCK</span>
+              {% elif ip.abuse_score >= 50 %}
+                <span class="text-warning text-xs font-bold">⚠ MONITOR</span>
+              {% else %}
+                <span class="text-success text-xs">✓ OK</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="5" class="text-center text-base-content/40 py-4">Tidak ada IP yang dilaporkan</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+{% if session %}
+<script>
+const chartDefaults = {
+  color: 'rgba(255,255,255,0.7)',
+  borderColor: 'rgba(255,255,255,0.1)',
+};
+Chart.defaults.color = chartDefaults.color;
+
+// Weekly trend chart
+new Chart(document.getElementById('weeklyChart'), {
+  type: 'bar',
+  data: {
+    labels: {{ weekly_labels_json|safe }},
+    datasets: [
+      {
+        label: 'IP Dilaporkan',
+        data: {{ weekly_reported_json|safe }},
+        backgroundColor: 'rgba(250,189,0,0.6)',
+        borderColor: 'rgba(250,189,0,1)',
+        borderWidth: 1,
+        yAxisID: 'y',
+      },
+      {
+        label: 'Avg Score',
+        data: {{ weekly_avg_json|safe }},
+        type: 'line',
+        borderColor: 'rgba(239,68,68,0.9)',
+        backgroundColor: 'rgba(239,68,68,0.1)',
+        borderWidth: 2,
+        pointRadius: 3,
+        yAxisID: 'y1',
+        tension: 0.3,
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { labels: { font: { size: 11 } } } },
+    scales: {
+      y: { beginAtZero: true, ticks: { font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.05)' } },
+      y1: { beginAtZero: true, position: 'right', ticks: { font: { size: 10 } }, grid: { display: false } },
+    }
+  }
+});
+
+// Category chart
+new Chart(document.getElementById('categoryChart'), {
+  type: 'bar',
+  data: {
+    labels: {{ cat_labels_json|safe }},
+    datasets: [{
+      label: 'IP Count',
+      data: {{ cat_counts_json|safe }},
+      backgroundColor: [
+        'rgba(99,102,241,0.7)','rgba(59,130,246,0.7)','rgba(16,185,129,0.7)',
+        'rgba(245,158,11,0.7)','rgba(239,68,68,0.7)','rgba(168,85,247,0.7)',
+        'rgba(236,72,153,0.7)','rgba(20,184,166,0.7)',
+      ],
+      borderRadius: 4,
+    }]
+  },
+  options: {
+    indexAxis: 'y',
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { beginAtZero: true, ticks: { font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.05)' } },
+      y: { ticks: { font: { size: 10 } }, grid: { display: false } },
+    }
+  }
+});
+</script>
+{% endif %}
+{% endblock %}

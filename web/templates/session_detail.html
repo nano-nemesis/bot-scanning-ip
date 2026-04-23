@@ -1,0 +1,209 @@
+{% extends "base.html" %}
+{% block title %}Session #{{ session.id }} — AS{{ as_number }}{% endblock %}
+
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+{% endblock %}
+
+{% block content %}
+
+{# Breadcrumb #}
+<div class="text-sm breadcrumbs mb-4">
+  <ul>
+    <li><a href="/sessions">Sessions</a></li>
+    <li>Sesi #{{ session.id }}</li>
+  </ul>
+</div>
+
+{# Header #}
+<div class="flex items-start justify-between mb-6">
+  <div>
+    <h1 class="text-2xl font-bold">Sesi #{{ session.id }}</h1>
+    <div class="flex items-center gap-2 mt-1">
+      {% if session.status == 'done' %}
+        <span class="badge badge-success badge-sm">✓ done</span>
+      {% elif session.status == 'running' %}
+        <span class="badge badge-info badge-sm">⟳ running</span>
+      {% else %}
+        <span class="badge badge-error badge-sm">✗ failed</span>
+      {% endif %}
+      <span class="badge badge-outline badge-sm">{{ session.session_type or "full" }}</span>
+      <span class="text-xs text-base-content/40">{{ session.started_at[:16].replace("T"," ") if session.started_at }}</span>
+    </div>
+  </div>
+  <a href="/ips?session={{ session.id }}" class="btn btn-sm btn-outline">Lihat IP List →</a>
+</div>
+
+{# Stat cards #}
+{% set total_ips = session.total_ips or 0 %}
+{% set reported = summary.total_reported_ips or 0 %}
+{% set pct = (reported / total_ips * 100) if total_ips > 0 else 0 %}
+
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+  <div class="stat bg-base-200 rounded-xl border border-base-300 p-4">
+    <div class="stat-title text-xs">Total IP</div>
+    <div class="stat-value text-xl">{{ "{:,}".format(total_ips) }}</div>
+    <div class="stat-desc">{{ session.total_prefixes or 0 }} prefix</div>
+  </div>
+  <div class="stat bg-base-200 rounded-xl border border-base-300 p-4">
+    <div class="stat-title text-xs">Dilaporkan</div>
+    <div class="stat-value text-xl text-warning">{{ "{:,}".format(reported) }}</div>
+    <div class="stat-desc">{{ "%.2f"|format(pct) }}%</div>
+  </div>
+  <div class="stat bg-base-200 rounded-xl border border-base-300 p-4">
+    <div class="stat-title text-xs">Avg Score</div>
+    <div class="stat-value text-xl text-info">{{ "%.1f"|format(summary.avg_score or 0) }}</div>
+    <div class="stat-desc">rata-rata</div>
+  </div>
+  <div class="stat bg-base-200 rounded-xl border border-base-300 p-4">
+    <div class="stat-title text-xs">Max Score</div>
+    <div class="stat-value text-xl text-error">{{ summary.max_score or 0 }}</div>
+    <div class="stat-desc">tertinggi</div>
+  </div>
+</div>
+
+{# Tabs #}
+<div role="tablist" class="tabs tabs-boxed bg-base-200 mb-4 w-fit">
+  <a role="tab" class="tab tab-active" id="tab-ips" onclick="showTab('ips')">Top IP</a>
+  <a role="tab" class="tab" id="tab-cats" onclick="showTab('cats')">Kategori</a>
+  <a role="tab" class="tab" id="tab-prefix" onclick="showTab('prefix')">Prefix</a>
+  {% if alerts %}<a role="tab" class="tab" id="tab-alerts" onclick="showTab('alerts')">
+    🚨 Alert ({{ alerts|length }})
+  </a>{% endif %}
+</div>
+
+{# Tab: Top IPs #}
+<div id="panel-ips" class="card bg-base-200 border border-base-300">
+  <div class="card-body p-4">
+    <div class="overflow-x-auto">
+      <table class="table table-xs table-zebra">
+        <thead><tr><th>IP</th><th>Score</th><th>Reports</th><th>Negara</th><th>Prefix</th><th>Status</th></tr></thead>
+        <tbody>
+          {% for ip in offenders %}
+          <tr class="hover">
+            <td><a href="/ips/{{ ip.ip_address }}" class="link link-hover font-mono text-xs">{{ ip.ip_address }}</a></td>
+            <td>
+              {% if ip.abuse_score >= 80 %}<span class="badge badge-error badge-sm">{{ ip.abuse_score }}</span>
+              {% elif ip.abuse_score >= 50 %}<span class="badge badge-warning badge-sm">{{ ip.abuse_score }}</span>
+              {% else %}<span class="badge badge-success badge-sm">{{ ip.abuse_score }}</span>{% endif %}
+            </td>
+            <td class="text-xs">{{ ip.num_reports }}</td>
+            <td class="text-xs">{{ ip.country_code or "-" }}</td>
+            <td class="font-mono text-xs">{{ ip.prefix or "-" }}</td>
+            <td>
+              {% if ip.abuse_score >= 80 %}<span class="text-error text-xs">🚫 BLOCK</span>
+              {% elif ip.abuse_score >= 50 %}<span class="text-warning text-xs">⚠ MONITOR</span>
+              {% else %}<span class="text-success text-xs">✓ OK</span>{% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+{# Tab: Kategori #}
+<div id="panel-cats" class="card bg-base-200 border border-base-300 hidden">
+  <div class="card-body p-4">
+    <div class="h-64">
+      <canvas id="catChart"></canvas>
+    </div>
+  </div>
+</div>
+
+{# Tab: Prefix #}
+<div id="panel-prefix" class="card bg-base-200 border border-base-300 hidden">
+  <div class="card-body p-4">
+    <div class="overflow-x-auto">
+      <table class="table table-xs table-zebra">
+        <thead><tr><th>Prefix</th><th class="text-right">IP Dilaporkan</th><th class="text-right">Total Reports</th><th class="text-right">Max Score</th></tr></thead>
+        <tbody>
+          {% for p in prefixes %}
+          <tr class="hover">
+            <td class="font-mono text-xs">{{ p.prefix }}</td>
+            <td class="text-right text-xs">{{ p.reported_ips }}</td>
+            <td class="text-right text-xs">{{ p.total_reports }}</td>
+            <td class="text-right">
+              {% if p.max_score >= 80 %}<span class="badge badge-error badge-xs">{{ p.max_score }}</span>
+              {% elif p.max_score >= 50 %}<span class="badge badge-warning badge-xs">{{ p.max_score }}</span>
+              {% else %}<span class="badge badge-ghost badge-xs">{{ p.max_score }}</span>{% endif %}
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="4" class="text-center text-base-content/40 py-4">Tidak ada data prefix</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+{# Tab: Alerts #}
+{% if alerts %}
+<div id="panel-alerts" class="card bg-base-200 border border-base-300 hidden">
+  <div class="card-body p-4">
+    <p class="text-sm text-error mb-3">{{ alerts|length }} IP dengan score ≥ {{ alert_threshold }}</p>
+    <div class="overflow-x-auto">
+      <table class="table table-xs table-zebra">
+        <thead><tr><th>IP</th><th>Score</th><th>Reports</th><th>Negara</th></tr></thead>
+        <tbody>
+          {% for ip in alerts %}
+          <tr class="hover">
+            <td><a href="/ips/{{ ip.ip_address }}" class="link link-hover font-mono text-xs">{{ ip.ip_address }}</a></td>
+            <td><span class="badge badge-error badge-sm">{{ ip.abuse_score }}</span></td>
+            <td class="text-xs">{{ ip.num_reports }}</td>
+            <td class="text-xs">{{ ip.country_code or "-" }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+Chart.defaults.color = 'rgba(255,255,255,0.7)';
+
+new Chart(document.getElementById('catChart'), {
+  type: 'bar',
+  data: {
+    labels: {{ cat_labels_json|safe }},
+    datasets: [{
+      label: 'IP Count',
+      data: {{ cat_counts_json|safe }},
+      backgroundColor: 'rgba(99,102,241,0.7)',
+      borderRadius: 4,
+    }]
+  },
+  options: {
+    indexAxis: 'y',
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { beginAtZero: true, ticks: { font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.05)' } },
+      y: { ticks: { font: { size: 10 } }, grid: { display: false } },
+    }
+  }
+});
+
+function showTab(name) {
+  ['ips','cats','prefix','alerts'].forEach(t => {
+    const panel = document.getElementById('panel-' + t);
+    const tab = document.getElementById('tab-' + t);
+    if (!panel) return;
+    if (t === name) {
+      panel.classList.remove('hidden');
+      if (tab) tab.classList.add('tab-active');
+    } else {
+      panel.classList.add('hidden');
+      if (tab) tab.classList.remove('tab-active');
+    }
+  });
+}
+</script>
+{% endblock %}

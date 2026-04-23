@@ -1,0 +1,37 @@
+{% for ip in ips %}
+<tr class="hover">
+  <td>
+    <a href="/ips/{{ ip.ip_address }}" class="link link-hover font-mono text-xs">{{ ip.ip_address }}</a>
+  </td>
+  <td>
+    {% if ip.abuse_score >= 80 %}
+      <span class="badge badge-error badge-sm">{{ ip.abuse_score }}</span>
+    {% elif ip.abuse_score >= 50 %}
+      <span class="badge badge-warning badge-sm">{{ ip.abuse_score }}</span>
+    {% else %}
+      <span class="badge badge-success badge-sm">{{ ip.abuse_score }}</span>
+    {% endif %}
+  </td>
+  <td class="text-xs">{{ ip.num_reports }}</td>
+  <td class="text-xs">{{ ip.country_code or "-" }}</td>
+  <td class="font-mono text-xs">{{ ip.prefix or "-" }}</td>
+  <td class="text-xs text-base-content/60">
+    {% if ip.last_reported %}{{ ip.last_reported[:10] }}{% else %}-{% endif %}
+  </td>
+  <td>
+    {% if ip.abuse_score >= 80 %}
+      <span class="text-error text-xs font-bold">🚫 BLOCK</span>
+    {% elif ip.abuse_score >= 50 %}
+      <span class="text-warning text-xs font-bold">⚠ MONITOR</span>
+    {% else %}
+      <span class="text-success text-xs">✓ OK</span>
+    {% endif %}
+  </td>
+</tr>
+{% else %}
+<tr>
+  <td colspan="7" class="text-center text-base-content/40 py-8">
+    Tidak ada IP yang cocok dengan filter.
+  </td>
+</tr>
+{% endfor %}

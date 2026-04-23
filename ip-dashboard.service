@@ -1,0 +1,22 @@
+[Unit]
+Description=IP Scanner Web Dashboard
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/bot-scanning-ip
+EnvironmentFile=/root/bot-scanning-ip/.env
+ExecStart=/root/bot-scanning-ip/venv/bin/uvicorn \
+    web.main:app \
+    --host 127.0.0.1 \
+    --port 8080 \
+    --workers 1 \
+    --proxy-headers \
+    --forwarded-allow-ips=127.0.0.1 \
+    --no-access-log
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target
