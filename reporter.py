@@ -1,3 +1,4 @@
+import ipaddress
 import json
 import logging
 from datetime import datetime, timezone
@@ -147,6 +148,77 @@ def split_message(text: str, max_len: int = MAX_MESSAGE_LEN) -> list[str]:
     if current:
         chunks.append(current)
     return chunks
+
+
+def format_nullroute_export(ips: list[dict], min_score: int, fmt: str = "plain") -> str:
+    valid = []
+    for ip in ips:
+        try:
+            addr = ipaddress.ip_address(ip["ip_address"])
+            if not (addr.is_private or addr.is_loopback or addr.is_reserved):
+                valid.append(ip)
+        except ValueError:
+            pass
+
+    if not valid:
+        return f"# No IPs with score >= {min_score}\n"
+
+    header = f"# Null route export — score >= {min_score} — {len(valid)} IPs\n"
+
+    if fmt == "mikrotik":
+        lines = [
+            f'/ip firewall address-list add address={ip["ip_address"]} '
+            f'list=blacklist comment="score:{ip.get("abuse_score", 0)} '
+            f'rep:{ip.get("num_reports", 0)}"'
+            for ip in valid
+        ]
+    elif fmt == "bird":
+        lines = [
+            f'route {ip["ip_address"]}/32 reject; # score:{ip.get("abuse_score", 0)}'
+            for ip in valid
+        ]
+    else:
+        lines = [ip["ip_address"] for ip in valid]
+
+    return header + "\n".join(lines) + "\n"
+
+
+def format_weekly_trend(weeks: list[dict]) -> str:
+    if not weeks:
+        return "📊 Belum ada data mingguan. Butuh minimal 1 minggu scan penuh."
+
+    lines = ["📈 *Laporan Tren Mingguan*\n"]
+
+    labels = ["Minggu Ini", "1 Minggu Lalu", "2 Minggu Lalu", "3 Minggu Lalu"]
+    for i, w in enumerate(weeks[:4]):
+        label = labels[i] if i < len(labels) else f"{i} Minggu Lalu"
+        lines.append(f"*{label} ({w['week_label']})*")
+        lines.append(f"Scan       : `{w.get('scan_count', 0)}x`")
+        lines.append(f"Total IP   : `{int(w.get('total_ips') or 0):,}`")
+        lines.append(f"Dilaporkan : `{int(w.get('reported_ips') or 0):,}`")
+        lines.append(f"Avg Score  : `{float(w.get('avg_score') or 0):.1f}`")
+        lines.append(f"Max Score  : `{int(w.get('max_score') or 0)}`")
+        lines.append("")
+
+    if len(weeks) >= 2:
+        cur, prev = weeks[0], weeks[1]
+        lines.append("*Perubahan vs Minggu Lalu*")
+
+        cur_rep = int(cur.get("reported_ips") or 0)
+        prev_rep = int(prev.get("reported_ips") or 0)
+        if prev_rep > 0:
+            pct = (cur_rep - prev_rep) / prev_rep * 100
+            trend = "✅ Membaik" if pct < 0 else ("🔴 Memburuk" if pct > 0 else "➡️ Sama")
+            lines.append(f"IP Dilaporkan : `{prev_rep:,}` → `{cur_rep:,}` ({pct:+.1f}%) {trend}")
+
+        cur_avg = float(cur.get("avg_score") or 0)
+        prev_avg = float(prev.get("avg_score") or 0)
+        if prev_avg > 0:
+            diff = cur_avg - prev_avg
+            trend = "✅ Membaik" if diff < 0 else ("🔴 Memburuk" if diff > 0 else "➡️ Sama")
+            lines.append(f"Avg Score     : `{prev_avg:.1f}` → `{cur_avg:.1f}` ({diff:+.1f}) {trend}")
+
+    return "\n".join(lines)
 
 
 async def build_daily_report(session_id: int | None = None) -> list[str]:

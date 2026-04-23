@@ -230,6 +230,59 @@ async def get_session_history(limit: int = 7) -> list[dict]:
         return [dict(r) for r in rows]
 
 
+async def get_high_score_ips(session_id: int, threshold: int, limit: int = 15) -> list[dict]:
+    async with aiosqlite.connect(config.db_path) as db:
+        db.row_factory = aiosqlite.Row
+        cursor = await db.execute(
+            """SELECT * FROM ip_results
+               WHERE session_id=? AND abuse_score >= ?
+               ORDER BY abuse_score DESC LIMIT ?""",
+            (session_id, threshold, limit),
+        )
+        rows = await cursor.fetchall()
+        return [dict(r) for r in rows]
+
+
+async def get_ips_for_nullroute(session_id: int, min_score: int) -> list[dict]:
+    async with aiosqlite.connect(config.db_path) as db:
+        db.row_factory = aiosqlite.Row
+        cursor = await db.execute(
+            """SELECT ip_address, abuse_score, num_reports, country_code, prefix
+               FROM ip_results
+               WHERE session_id=? AND abuse_score >= ?
+               ORDER BY abuse_score DESC""",
+            (session_id, min_score),
+        )
+        rows = await cursor.fetchall()
+        return [dict(r) for r in rows]
+
+
+async def get_weekly_stats() -> list[dict]:
+    """Stats grouped by ISO week for the last 4 full-scan weeks."""
+    async with aiosqlite.connect(config.db_path) as db:
+        db.row_factory = aiosqlite.Row
+        cursor = await db.execute("""
+            SELECT
+                strftime('%Y-W%W', s.started_at)  AS week_label,
+                COUNT(DISTINCT s.id)               AS scan_count,
+                COALESCE(SUM(s.total_ips), 0)      AS total_ips,
+                COUNT(ir.id)                       AS reported_ips,
+                ROUND(AVG(ir.abuse_score), 1)      AS avg_score,
+                COALESCE(MAX(ir.abuse_score), 0)   AS max_score,
+                COALESCE(SUM(ir.num_reports), 0)   AS total_reports
+            FROM scan_sessions s
+            LEFT JOIN ip_results ir ON ir.session_id = s.id
+            WHERE s.status = 'done'
+              AND s.session_type = 'full'
+              AND s.started_at >= datetime('now', '-28 days')
+            GROUP BY week_label
+            ORDER BY week_label DESC
+            LIMIT 4
+        """)
+        rows = await cursor.fetchall()
+        return [dict(r) for r in rows]
+
+
 async def get_ip_detail_any(ip_address: str) -> dict | None:
     """Search ip_results across all sessions, return the most recent match."""
     async with aiosqlite.connect(config.db_path) as db:

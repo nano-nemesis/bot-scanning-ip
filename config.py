@@ -15,6 +15,8 @@ class Config:
     top_offenders_count: int
     scan_concurrency: int
     log_level: str
+    alert_threshold: int
+    nullroute_min_score: int
 
 
 def load_config() -> Config:
@@ -41,6 +43,8 @@ def load_config() -> Config:
         top_offenders_count=int(os.getenv("TOP_OFFENDERS_COUNT", "20")),
         scan_concurrency=int(os.getenv("SCAN_CONCURRENCY", "3")),
         log_level=os.getenv("LOG_LEVEL", "INFO"),
+        alert_threshold=int(os.getenv("ALERT_THRESHOLD", "80")),
+        nullroute_min_score=int(os.getenv("NULLROUTE_MIN_SCORE", "50")),
     )
 
 

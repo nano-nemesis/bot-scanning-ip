@@ -9,6 +9,7 @@ from config import config
 from db import (
     create_session,
     finish_session,
+    get_high_score_ips,
     save_category_stats,
     save_ip_results,
     save_prefix_result,
@@ -67,6 +68,30 @@ async def run_scan(bot: Bot) -> None:
                 f"Berhasil: {success_count}/{len(prefixes)}"
             ),
         )
+
+        # Alert jika ada IP di atas threshold
+        if config.alert_threshold > 0:
+            alerts = await get_high_score_ips(session_id, config.alert_threshold, limit=15)
+            if alerts:
+                alert_lines = [
+                    f"🚨 *{len(alerts)} IP dengan score ≥ {config.alert_threshold} ditemukan!*\n"
+                ]
+                for ip in alerts[:10]:
+                    action = "🚫 BLOCK" if ip["abuse_score"] >= 80 else "⚠️ MONITOR"
+                    alert_lines.append(
+                        f"`{ip['ip_address']}` | Score:{ip['abuse_score']} "
+                        f"| {ip.get('country_code', '-')} | {action}"
+                    )
+                if len(alerts) > 10:
+                    alert_lines.append(
+                        f"\n_...dan {len(alerts) - 10} IP lainnya. "
+                        f"Gunakan /nullroute untuk daftar lengkap._"
+                    )
+                await bot.send_message(
+                    chat_id=config.telegram_chat_id,
+                    text="\n".join(alert_lines),
+                    parse_mode="Markdown",
+                )
 
     except Exception as exc:
         logger.exception("Scan failed: %s", exc)
@@ -171,17 +196,17 @@ async def job_morning_report(bot: Bot) -> None:
 
 
 def setup_scheduler(bot: Bot) -> AsyncIOScheduler:
-    scheduler = AsyncIOScheduler(timezone="UTC")
+    scheduler = AsyncIOScheduler(timezone="Asia/Jakarta")
 
     scheduler.add_job(
         lambda: asyncio.ensure_future(job_midnight_notify(bot)),
-        trigger=CronTrigger(hour=17, minute=0, timezone="UTC"),
+        trigger=CronTrigger(hour=0, minute=0, timezone="Asia/Jakarta"),
         id="midnight_notify",
         replace_existing=True,
     )
     scheduler.add_job(
         lambda: asyncio.ensure_future(job_morning_report(bot)),
-        trigger=CronTrigger(hour=2, minute=0, timezone="UTC"),
+        trigger=CronTrigger(hour=9, minute=0, timezone="Asia/Jakarta"),
         id="morning_report",
         replace_existing=True,
     )

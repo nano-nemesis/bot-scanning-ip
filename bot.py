@@ -1,4 +1,5 @@
 import asyncio
+import io
 import logging
 import re
 
@@ -16,12 +17,20 @@ from db import (
     finish_session,
     get_any_session,
     get_ip_detail_any,
+    get_ips_for_nullroute,
     get_latest_session,
     get_session_history,
+    get_weekly_stats,
     save_category_stats,
     save_ip_results,
 )
-from reporter import build_daily_report, format_actionable_ip
+from dnsbl import check_dnsbl, format_dnsbl_result
+from reporter import (
+    build_daily_report,
+    format_actionable_ip,
+    format_nullroute_export,
+    format_weekly_trend,
+)
 from scanner import CATEGORY_NAMES, scan_single_ip
 from scheduler import handle_approval, run_scan
 
@@ -42,7 +51,10 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         "👋 *AS211407 IP Abuse Scanner Bot*\n\n"
         "Perintah tersedia:\n"
         "/scan — Trigger scan manual (admin)\n"
-        "/soloscan `<IP>` — Scan 1 IP secara langsung\n"
+        "/soloscan `<IP>` — Scan 1 IP ke AbuseIPDB\n"
+        "/dnsbl `<IP>` — Cek IP di 8 blacklist\n"
+        "/nullroute `[format]` — Export daftar IP buruk (admin)\n"
+        "/weeklytrend — Tren mingguan\n"
         "/report — Kirim laporan terbaru\n"
         "/status — Status sesi scan terakhir\n"
         "/check `<IP>` — Cek detail IP dari DB\n"
@@ -165,6 +177,82 @@ async def cmd_solo_scan(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     await update.message.reply_text(format_actionable_ip(result), parse_mode="Markdown")
 
 
+async def cmd_dnsbl(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if not context.args:
+        await update.message.reply_text(
+            "Penggunaan: `/dnsbl <IP>`\nContoh: `/dnsbl 1.2.3.4`",
+            parse_mode="Markdown",
+        )
+        return
+
+    ip = context.args[0].strip()
+    if not _IP_RE.match(ip):
+        await update.message.reply_text(
+            f"⚠️ Format IP tidak valid: `{ip}`", parse_mode="Markdown"
+        )
+        return
+
+    await update.message.reply_text(
+        f"🔍 Mengecek blacklist untuk `{ip}`...", parse_mode="Markdown"
+    )
+
+    try:
+        results = await check_dnsbl(ip)
+    except ValueError as exc:
+        await update.message.reply_text(f"⚠️ {exc}")
+        return
+    except Exception:
+        logger.exception("DNSBL check failed for %s", ip)
+        await update.message.reply_text("❌ Gagal mengecek blacklist. Coba lagi nanti.")
+        return
+
+    await update.message.reply_text(format_dnsbl_result(ip, results), parse_mode="Markdown")
+
+
+async def cmd_nullroute(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if not _is_admin(update.effective_user.id):
+        await update.message.reply_text("⛔ Perintah ini hanya untuk admin.")
+        return
+
+    fmt = context.args[0].lower() if context.args else "plain"
+    if fmt not in ("plain", "mikrotik", "bird"):
+        await update.message.reply_text(
+            "Format tidak valid. Gunakan: `plain` (default), `mikrotik`, atau `bird`",
+            parse_mode="Markdown",
+        )
+        return
+
+    session = await get_latest_session()
+    if not session:
+        await update.message.reply_text("⚠️ Belum ada data scan selesai.")
+        return
+
+    ips = await get_ips_for_nullroute(session["id"], config.nullroute_min_score)
+    if not ips:
+        await update.message.reply_text(
+            f"✅ Tidak ada IP dengan score ≥ {config.nullroute_min_score} di sesi terakhir."
+        )
+        return
+
+    content = format_nullroute_export(ips, config.nullroute_min_score, fmt)
+    file_obj = io.BytesIO(content.encode("utf-8"))
+    file_obj.name = f"nullroute_{fmt}_session{session['id']}.txt"
+
+    await update.message.reply_document(
+        document=file_obj,
+        caption=(
+            f"📋 Null route export — sesi #{session['id']}\n"
+            f"Format: `{fmt}` | IP: {len(ips)} | Min score: {config.nullroute_min_score}"
+        ),
+        parse_mode="Markdown",
+    )
+
+
+async def cmd_weekly_trend(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    weeks = await get_weekly_stats()
+    await update.message.reply_text(format_weekly_trend(weeks), parse_mode="Markdown")
+
+
 async def callback_approval(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     query = update.callback_query
     await query.answer()
@@ -187,6 +275,9 @@ def register_handlers(app: Application) -> None:
     app.add_handler(CommandHandler("start", cmd_start))
     app.add_handler(CommandHandler("scan", cmd_scan))
     app.add_handler(CommandHandler("soloscan", cmd_solo_scan))
+    app.add_handler(CommandHandler("dnsbl", cmd_dnsbl))
+    app.add_handler(CommandHandler("nullroute", cmd_nullroute))
+    app.add_handler(CommandHandler("weeklytrend", cmd_weekly_trend))
     app.add_handler(CommandHandler("report", cmd_report))
     app.add_handler(CommandHandler("status", cmd_status))
     app.add_handler(CommandHandler("check", cmd_check))
