@@ -17,6 +17,8 @@ class WebConfig:
     alert_threshold: int
     nullroute_min_score: int
     as_number: str
+    node_name: str
+    node_location: str
 
 
 def load_web_config() -> WebConfig:
@@ -42,6 +44,8 @@ def load_web_config() -> WebConfig:
         alert_threshold=int(os.getenv("ALERT_THRESHOLD", "80")),
         nullroute_min_score=int(os.getenv("NULLROUTE_MIN_SCORE", "50")),
         as_number=os.getenv("AS_NUMBER", "AS211407"),
+        node_name=os.getenv("WEB_NODE_NAME", "Scan Node"),
+        node_location=os.getenv("WEB_NODE_LOCATION", "Jakarta"),
     )
 
 

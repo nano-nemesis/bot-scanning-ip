@@ -4,13 +4,10 @@
     <a href="/ips/{{ ip.ip_address }}" class="link link-hover font-mono text-xs">{{ ip.ip_address }}</a>
   </td>
   <td>
-    {% if ip.abuse_score >= 80 %}
-      <span class="badge badge-error badge-sm">{{ ip.abuse_score }}</span>
-    {% elif ip.abuse_score >= 50 %}
-      <span class="badge badge-warning badge-sm">{{ ip.abuse_score }}</span>
-    {% else %}
-      <span class="badge badge-success badge-sm">{{ ip.abuse_score }}</span>
-    {% endif %}
+    {% set s = ip.abuse_score %}
+    {% if s >= 80 %}<span class="badge-red">{{ s }}</span>
+    {% elif s >= 20 %}<span class="badge-orange">{{ s }}</span>
+    {% else %}<span class="badge-green">{{ s }}</span>{% endif %}
   </td>
   <td class="text-xs">{{ ip.num_reports }}</td>
   <td class="text-xs">{{ ip.country_code or "-" }}</td>
@@ -19,13 +16,9 @@
     {% if ip.last_reported %}{{ ip.last_reported[:10] }}{% else %}-{% endif %}
   </td>
   <td>
-    {% if ip.abuse_score >= 80 %}
-      <span class="text-error text-xs font-bold">🚫 BLOCK</span>
-    {% elif ip.abuse_score >= 50 %}
-      <span class="text-warning text-xs font-bold">⚠ MONITOR</span>
-    {% else %}
-      <span class="text-success text-xs">✓ OK</span>
-    {% endif %}
+    {% if ip.abuse_score >= 80 %}<span style="color:#f85149;font-size:12px;font-weight:600;">🔴 BLOCK</span>
+    {% elif ip.abuse_score >= 50 %}<span style="color:#d29922;font-size:12px;font-weight:600;">🟡 MONITOR</span>
+    {% else %}<span style="color:#3fb950;font-size:12px;">✅ OK</span>{% endif %}
   </td>
 </tr>
 {% else %}

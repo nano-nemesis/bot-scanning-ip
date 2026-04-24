@@ -1,239 +1,339 @@
 {% extends "base.html" %}
 {% block title %}Dashboard — AS{{ as_number }}{% endblock %}
-
 {% block head %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
 {% endblock %}
 
 {% block content %}
+<div style="padding:24px 28px;">
 
-{# ── Page header ── #}
-<div class="flex items-center justify-between mb-6">
+{# ── Header ── #}
+<div style="display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:24px;">
   <div>
-    <h1 class="text-2xl font-bold">Dashboard</h1>
-    <p class="text-sm text-base-content/50">Overview AS{{ as_number }}</p>
+    <h1 style="font-size:22px; font-weight:700; color:#e6edf3; margin-bottom:3px;">Dashboard</h1>
+    <p style="font-size:13px; color:#8b949e;">Overview AS{{ as_number }}</p>
   </div>
   {% if session %}
-  <div class="text-right text-xs text-base-content/40">
-    <div>Sesi #{{ session.id }}</div>
-    <div>{{ session.started_at[:10] if session.started_at }}</div>
+  <div style="text-align:right;">
+    <div style="font-size:12px; color:#8b949e; margin-bottom:4px;">
+      Sesi #{{ session.id }} &middot; {{ node_name }}
+      &nbsp;|&nbsp;
+      {{ session.started_at[:10] if session.started_at }}
+      {% if session.started_at and "T" in session.started_at %}
+        &nbsp;|&nbsp; {{ session.started_at[11:16] }} UTC
+      {% endif %}
+    </div>
+    <div style="display:inline-flex; align-items:center; gap:6px; background:#161b22; border:1px solid #30363d; border-radius:6px; padding:4px 10px; font-size:11px; color:#8b949e;">
+      <svg style="width:12px;height:12px;color:#388bfd;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+      </svg>
+      <span style="color:#388bfd;">Location Info</span>
+      <span style="color:#30363d;">·</span>
+      <span>{{ node_location }}</span>
+    </div>
   </div>
   {% endif %}
 </div>
 
 {% if not session %}
-<div class="alert alert-warning">
-  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+<div style="background:#1c2128; border:1px solid #d29922; border-radius:8px; padding:16px 20px; display:flex; align-items:center; gap:12px; color:#d29922;">
+  <svg style="width:20px;height:20px;flex-shrink:0;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
   </svg>
-  Belum ada data scan. Gunakan <code>/scan</code> di Telegram untuk memulai.
+  Belum ada data scan. Gunakan <code style="background:rgba(210,153,34,.15); padding:1px 6px; border-radius:4px;">/scan</code> di Telegram untuk memulai.
 </div>
 {% else %}
 
 {# ── Stat Cards ── #}
-{% set total_ips = session.total_ips or 0 %}
-{% set reported = summary.total_reported_ips or 0 %}
-{% set avg_score = summary.avg_score or 0 %}
-{% set max_score = summary.max_score or 0 %}
-{% set pct = (reported / total_ips * 100) if total_ips > 0 else 0 %}
+<div style="display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:20px;">
 
-<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-  <div class="stat bg-base-200 rounded-xl border border-base-300">
-    <div class="stat-figure text-primary">
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h.5A2.5 2.5 0 0020 5.5v-1.565"/>
-      </svg>
-    </div>
-    <div class="stat-title text-xs">Total IP</div>
-    <div class="stat-value text-lg">{{ "{:,}".format(total_ips) }}</div>
-    <div class="stat-desc">{{ session.total_prefixes or 0 }} prefix</div>
-  </div>
-
-  <div class="stat bg-base-200 rounded-xl border border-base-300">
-    <div class="stat-figure text-warning">
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-      </svg>
-    </div>
-    <div class="stat-title text-xs">IP Dilaporkan</div>
-    <div class="stat-value text-lg text-warning">{{ "{:,}".format(reported) }}</div>
-    <div class="stat-desc">{{ "%.2f"|format(pct) }}% dari total</div>
-  </div>
-
-  <div class="stat bg-base-200 rounded-xl border border-base-300">
-    <div class="stat-figure text-info">
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
-      </svg>
-    </div>
-    <div class="stat-title text-xs">Avg Score</div>
-    <div class="stat-value text-lg text-info">{{ "%.1f"|format(avg_score) }}</div>
-    <div class="stat-desc">rata-rata abuse score</div>
-  </div>
-
-  <div class="stat bg-base-200 rounded-xl border border-base-300">
-    <div class="stat-figure text-error">
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
-      </svg>
-    </div>
-    <div class="stat-title text-xs">Max Score</div>
-    <div class="stat-value text-lg text-error">{{ max_score }}</div>
-    <div class="stat-desc">
-      {% if max_score >= alert_threshold %}<span class="text-error">⚠ Di atas threshold</span>{% else %}dalam batas aman{% endif %}
-    </div>
-  </div>
-</div>
-
-{# ── Charts row ── #}
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
-  <div class="card bg-base-200 border border-base-300">
-    <div class="card-body p-4">
-      <h2 class="card-title text-sm font-semibold mb-2">📈 Tren Mingguan</h2>
-      <div class="h-48">
-        <canvas id="weeklyChart"></canvas>
+  {# Card 1: Total IP — red accent #}
+  <div class="card" style="padding:18px 20px; position:relative; overflow:hidden;">
+    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+      <div>
+        <p style="font-size:11px; color:#8b949e; text-transform:uppercase; letter-spacing:.05em; margin-bottom:8px;">Total IP</p>
+        <p style="font-size:28px; font-weight:700; color:#e6edf3; line-height:1;">{{ "{:,}".format(total_ips) }}</p>
+        <div style="margin-top:8px; display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+          <span style="font-size:11px; color:#8b949e;">{{ session.total_prefixes or 0 }} subnet prefix</span>
+          {% if trend_total_ips %}
+            <span class="trend-{{ trend_total_ips.direction }}">
+              {% if trend_total_ips.direction == 'up' %}↑{% elif trend_total_ips.direction == 'down' %}↓{% else %}→{% endif %}
+              {{ trend_total_ips.pct|abs }}%
+            </span>
+          {% endif %}
+        </div>
+      </div>
+      <div style="width:36px; height:36px; background:rgba(248,81,73,.12); border-radius:8px; display:flex; align-items:center; justify-content:center;">
+        <svg style="width:18px;height:18px;color:#f85149;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h.5A2.5 2.5 0 0020 5.5v-1.565"/>
+        </svg>
       </div>
     </div>
+    <div style="position:absolute; bottom:0; left:0; right:0; height:3px; background:linear-gradient(90deg,#f85149,rgba(248,81,73,.2));"></div>
   </div>
 
-  <div class="card bg-base-200 border border-base-300">
-    <div class="card-body p-4">
-      <h2 class="card-title text-sm font-semibold mb-2">📂 Kategori Laporan</h2>
-      <div class="h-48">
-        <canvas id="categoryChart"></canvas>
+  {# Card 2: IP Dilaporkan — yellow accent #}
+  <div class="card" style="padding:18px 20px; position:relative; overflow:hidden;">
+    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+      <div>
+        <p style="font-size:11px; color:#8b949e; text-transform:uppercase; letter-spacing:.05em; margin-bottom:8px;">IP Dilaporkan</p>
+        <p style="font-size:28px; font-weight:700; color:#e3b341; line-height:1;">{{ "{:,}".format(reported) }}</p>
+        <div style="margin-top:8px; display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+          <span style="font-size:11px; color:#8b949e;">{{ "%.2f"|format(pct) }}% dari total</span>
+          {% if trend_reported %}
+            <span class="trend-{{ trend_reported.direction }}">
+              {% if trend_reported.value > 0 %}+{% endif %}{{ trend_reported.value }} laporan
+            </span>
+          {% endif %}
+        </div>
+      </div>
+      <div style="width:36px; height:36px; background:rgba(227,179,65,.12); border-radius:8px; display:flex; align-items:center; justify-content:center;">
+        <svg style="width:18px;height:18px;color:#e3b341;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
       </div>
     </div>
+    <div style="position:absolute; bottom:0; left:0; right:0; height:3px; background:linear-gradient(90deg,#e3b341,rgba(227,179,65,.2));"></div>
   </div>
-</div>
 
-{# ── Top Offenders ── #}
-<div class="card bg-base-200 border border-base-300">
-  <div class="card-body p-4">
-    <div class="flex items-center justify-between mb-3">
-      <h2 class="card-title text-sm font-semibold">🔴 Top 10 IP Terburuk</h2>
-      <a href="/ips" class="btn btn-xs btn-outline">Lihat Semua →</a>
+  {# Card 3: Avg Score — blue accent #}
+  <div class="card" style="padding:18px 20px; position:relative; overflow:hidden;">
+    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+      <div>
+        <p style="font-size:11px; color:#8b949e; text-transform:uppercase; letter-spacing:.05em; margin-bottom:8px;">Avg Score</p>
+        <p style="font-size:28px; font-weight:700; color:#388bfd; line-height:1;">{{ "%.1f"|format(avg_score) }}</p>
+        <div style="margin-top:8px; display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+          <span style="font-size:11px; color:#8b949e;">Rata-rata abuse score</span>
+          {% if trend_avg %}
+            <span class="trend-{{ trend_avg.direction }}">
+              {% if trend_avg.value > 0 %}+{% endif %}{{ trend_avg.value }} pts
+            </span>
+          {% endif %}
+        </div>
+      </div>
+      <div style="width:36px; height:36px; background:rgba(56,139,253,.12); border-radius:8px; display:flex; align-items:center; justify-content:center;">
+        <svg style="width:18px;height:18px;color:#388bfd;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+        </svg>
+      </div>
     </div>
-    <div class="overflow-x-auto">
-      <table class="table table-xs table-zebra">
-        <thead>
-          <tr>
-            <th>IP Address</th>
-            <th>Score</th>
-            <th>Reports</th>
-            <th>Negara</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for ip in offenders %}
-          <tr class="hover">
-            <td>
-              <a href="/ips/{{ ip.ip_address }}" class="link link-hover font-mono text-xs">{{ ip.ip_address }}</a>
-            </td>
-            <td>
-              {% if ip.abuse_score >= 80 %}
-                <span class="badge badge-error badge-sm">{{ ip.abuse_score }}</span>
-              {% elif ip.abuse_score >= 50 %}
-                <span class="badge badge-warning badge-sm">{{ ip.abuse_score }}</span>
-              {% else %}
-                <span class="badge badge-success badge-sm">{{ ip.abuse_score }}</span>
-              {% endif %}
-            </td>
-            <td class="text-xs">{{ ip.num_reports }}</td>
-            <td class="text-xs">{{ ip.country_code or "-" }}</td>
-            <td>
-              {% if ip.abuse_score >= 80 %}
-                <span class="text-error text-xs font-bold">🚫 BLOCK</span>
-              {% elif ip.abuse_score >= 50 %}
-                <span class="text-warning text-xs font-bold">⚠ MONITOR</span>
-              {% else %}
-                <span class="text-success text-xs">✓ OK</span>
-              {% endif %}
-            </td>
-          </tr>
+    <div style="position:absolute; bottom:0; left:0; right:0; height:3px; background:linear-gradient(90deg,#388bfd,rgba(56,139,253,.2));"></div>
+  </div>
+
+  {# Card 4: Max Score — orange accent #}
+  <div class="card" style="padding:18px 20px; position:relative; overflow:hidden;">
+    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+      <div>
+        <p style="font-size:11px; color:#8b949e; text-transform:uppercase; letter-spacing:.05em; margin-bottom:8px;">Max Score</p>
+        <p style="font-size:28px; font-weight:700; color:#d29922; line-height:1;">{{ max_score }}</p>
+        <div style="margin-top:8px;">
+          {% if max_score >= alert_threshold %}
+            <span style="font-size:11px; color:#f85149;">⚠ Di atas critical threshold</span>
           {% else %}
-          <tr><td colspan="5" class="text-center text-base-content/40 py-4">Tidak ada IP yang dilaporkan</td></tr>
-          {% endfor %}
-        </tbody>
-      </table>
+            <span style="font-size:11px; color:#3fb950;">✓ Dalam batas aman</span>
+          {% endif %}
+        </div>
+      </div>
+      <div style="width:36px; height:36px; background:rgba(210,153,34,.12); border-radius:8px; display:flex; align-items:center; justify-content:center;">
+        <svg style="width:18px;height:18px;color:#d29922;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+        </svg>
+      </div>
     </div>
+    <div style="position:absolute; bottom:0; left:0; right:0; height:3px; background:linear-gradient(90deg,#d29922,rgba(210,153,34,.2));"></div>
+  </div>
+
+</div>
+
+{# ── Charts Row ── #}
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:20px;">
+
+  {# Tren Mingguan #}
+  <div class="card" style="padding:18px 20px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+      <div>
+        <h2 style="font-size:14px; font-weight:600; color:#e6edf3;">Tren Mingguan</h2>
+        <p style="font-size:11px; color:#8b949e; margin-top:2px;">IP Dilaporkan vs Avg Score per minggu</p>
+      </div>
+    </div>
+    <div style="height:200px; position:relative;">
+      <canvas id="weeklyChart"></canvas>
+    </div>
+  </div>
+
+  {# Distribusi Kategori — Donut #}
+  <div class="card" style="padding:18px 20px;">
+    <div style="margin-bottom:16px;">
+      <h2 style="font-size:14px; font-weight:600; color:#e6edf3;">Distribusi Kategori Laporan</h2>
+      <p style="font-size:11px; color:#8b949e; margin-top:2px;">Breakdown jenis abuse terbanyak</p>
+    </div>
+    <div style="height:200px; position:relative;">
+      <canvas id="categoryChart"></canvas>
+    </div>
+  </div>
+
+</div>
+
+{# ── Top 10 Offenders Table ── #}
+<div class="card">
+  <div style="padding:16px 20px; border-bottom:1px solid #30363d; display:flex; align-items:center; justify-content:space-between;">
+    <div>
+      <h2 style="font-size:14px; font-weight:600; color:#e6edf3;">Top 10 IP Terburuk</h2>
+      <p style="font-size:11px; color:#8b949e; margin-top:2px;">Berdasarkan AbuseIPDB confidence score</p>
+    </div>
+    <a href="/ips" class="btn btn-outline btn-sm">Lihat Semua →</a>
+  </div>
+  <div style="overflow-x:auto;">
+    <table>
+      <thead>
+        <tr>
+          <th>IP Address</th>
+          <th>Score</th>
+          <th>Reports</th>
+          <th>Negara</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for ip in offenders %}
+        <tr>
+          <td>
+            <a href="/ips/{{ ip.ip_address }}" class="ip-addr" style="color:#388bfd; text-decoration:none; font-size:13px;">{{ ip.ip_address }}</a>
+          </td>
+          <td>
+            {% set s = ip.abuse_score %}
+            {% if s >= 80 %}
+              <span class="badge-red">{{ s }}</span>
+            {% elif s >= 20 %}
+              <span class="badge-orange">{{ s }}</span>
+            {% else %}
+              <span class="badge-green">{{ s }}</span>
+            {% endif %}
+          </td>
+          <td style="color:#8b949e; font-size:13px;">{{ ip.num_reports }}</td>
+          <td style="font-size:13px; color:#e6edf3;">{{ ip.country_code or "—" }}</td>
+          <td>
+            {% if ip.abuse_score >= 80 %}
+              <span style="color:#f85149; font-size:12px; font-weight:600;">🔴 BLOCK</span>
+            {% elif ip.abuse_score >= 50 %}
+              <span style="color:#d29922; font-size:12px; font-weight:600;">🟡 MONITOR</span>
+            {% else %}
+              <span style="color:#3fb950; font-size:12px; font-weight:600;">✅ OK</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="5" style="text-align:center; color:#8b949e; padding:32px;">
+            Tidak ada IP yang dilaporkan pada sesi ini.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
   </div>
 </div>
 
 {% endif %}
+</div>
 {% endblock %}
 
 {% block scripts %}
 {% if session %}
 <script>
-const chartDefaults = {
-  color: 'rgba(255,255,255,0.7)',
-  borderColor: 'rgba(255,255,255,0.1)',
-};
-Chart.defaults.color = chartDefaults.color;
+Chart.defaults.color = '#8b949e';
+Chart.defaults.borderColor = '#21262d';
 
-// Weekly trend chart
+// Weekly trend — dual axis bar + line
 new Chart(document.getElementById('weeklyChart'), {
-  type: 'bar',
   data: {
     labels: {{ weekly_labels_json|safe }},
     datasets: [
       {
+        type: 'bar',
         label: 'IP Dilaporkan',
         data: {{ weekly_reported_json|safe }},
-        backgroundColor: 'rgba(250,189,0,0.6)',
-        borderColor: 'rgba(250,189,0,1)',
+        backgroundColor: 'rgba(227,179,65,0.5)',
+        borderColor: '#e3b341',
         borderWidth: 1,
+        borderRadius: 3,
         yAxisID: 'y',
       },
       {
+        type: 'line',
         label: 'Avg Score',
         data: {{ weekly_avg_json|safe }},
-        type: 'line',
-        borderColor: 'rgba(239,68,68,0.9)',
-        backgroundColor: 'rgba(239,68,68,0.1)',
+        borderColor: '#388bfd',
+        backgroundColor: 'rgba(56,139,253,0.1)',
         borderWidth: 2,
-        pointRadius: 3,
-        yAxisID: 'y1',
+        pointRadius: 4,
+        pointBackgroundColor: '#388bfd',
         tension: 0.3,
+        yAxisID: 'y1',
       }
     ]
   },
   options: {
     responsive: true,
     maintainAspectRatio: false,
-    plugins: { legend: { labels: { font: { size: 11 } } } },
+    interaction: { mode: 'index', intersect: false },
+    plugins: {
+      legend: { labels: { font: { size: 11 }, boxWidth: 12 } },
+      tooltip: {
+        backgroundColor: '#1c2128',
+        borderColor: '#30363d',
+        borderWidth: 1,
+        titleColor: '#e6edf3',
+        bodyColor: '#8b949e',
+        padding: 10,
+      }
+    },
     scales: {
-      y: { beginAtZero: true, ticks: { font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.05)' } },
-      y1: { beginAtZero: true, position: 'right', ticks: { font: { size: 10 } }, grid: { display: false } },
+      y:  { beginAtZero: true, grid: { color: '#21262d' }, ticks: { font: { size: 10 } } },
+      y1: { beginAtZero: true, position: 'right', grid: { display: false }, ticks: { font: { size: 10 } } },
     }
   }
 });
 
-// Category chart
+// Category donut
+const donutColors = ['#388bfd','#d29922','#f85149','#e3b341','#3fb950','#a371f7','#8b949e'];
 new Chart(document.getElementById('categoryChart'), {
-  type: 'bar',
+  type: 'doughnut',
   data: {
     labels: {{ cat_labels_json|safe }},
     datasets: [{
-      label: 'IP Count',
       data: {{ cat_counts_json|safe }},
-      backgroundColor: [
-        'rgba(99,102,241,0.7)','rgba(59,130,246,0.7)','rgba(16,185,129,0.7)',
-        'rgba(245,158,11,0.7)','rgba(239,68,68,0.7)','rgba(168,85,247,0.7)',
-        'rgba(236,72,153,0.7)','rgba(20,184,166,0.7)',
-      ],
-      borderRadius: 4,
+      backgroundColor: donutColors,
+      borderColor: '#1c2128',
+      borderWidth: 2,
+      hoverOffset: 6,
     }]
   },
   options: {
-    indexAxis: 'y',
     responsive: true,
     maintainAspectRatio: false,
-    plugins: { legend: { display: false } },
-    scales: {
-      x: { beginAtZero: true, ticks: { font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.05)' } },
-      y: { ticks: { font: { size: 10 } }, grid: { display: false } },
+    cutout: '65%',
+    plugins: {
+      legend: {
+        position: 'right',
+        labels: { font: { size: 11 }, boxWidth: 10, padding: 10, color: '#8b949e' }
+      },
+      tooltip: {
+        backgroundColor: '#1c2128',
+        borderColor: '#30363d',
+        borderWidth: 1,
+        titleColor: '#e6edf3',
+        bodyColor: '#8b949e',
+        padding: 10,
+        callbacks: {
+          label: ctx => {
+            const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
+            const pct = total ? Math.round(ctx.parsed / total * 100) : 0;
+            return ` ${ctx.label}: ${ctx.parsed} IP (${pct}%)`;
+          }
+        }
+      }
     }
   }
 });
