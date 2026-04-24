@@ -1,30 +1,25 @@
 {% for ip in ips %}
-<tr class="hover">
+{% set s = ip.abuse_score %}
+<tr>
+  <td><a href="/ips/{{ ip.ip_address }}" class="mono" style="color:var(--blue); text-decoration:none; font-size:13px;">{{ ip.ip_address }}</a></td>
   <td>
-    <a href="/ips/{{ ip.ip_address }}" class="link link-hover font-mono text-xs">{{ ip.ip_address }}</a>
-  </td>
-  <td>
-    {% set s = ip.abuse_score %}
     {% if s >= 80 %}<span class="badge-red">{{ s }}</span>
     {% elif s >= 20 %}<span class="badge-orange">{{ s }}</span>
     {% else %}<span class="badge-green">{{ s }}</span>{% endif %}
   </td>
-  <td class="text-xs">{{ ip.num_reports }}</td>
-  <td class="text-xs">{{ ip.country_code or "-" }}</td>
-  <td class="font-mono text-xs">{{ ip.prefix or "-" }}</td>
-  <td class="text-xs text-base-content/60">
-    {% if ip.last_reported %}{{ ip.last_reported[:10] }}{% else %}-{% endif %}
-  </td>
+  <td style="color:var(--text-2); font-size:13px;">{{ ip.num_reports }}</td>
   <td>
-    {% if ip.abuse_score >= 80 %}<span style="color:#f85149;font-size:12px;font-weight:600;">🔴 BLOCK</span>
-    {% elif ip.abuse_score >= 50 %}<span style="color:#d29922;font-size:12px;font-weight:600;">🟡 MONITOR</span>
-    {% else %}<span style="color:#3fb950;font-size:12px;">✅ OK</span>{% endif %}
+    <span title="{{ ip.country_code or '' }}">{{ ip.country_code | country_flag }}</span>
+    <span style="font-size:12px; color:var(--text-2); margin-left:4px;">{{ ip.country_code or "—" }}</span>
+  </td>
+  <td class="mono" style="font-size:12px; color:var(--text-2);">{{ ip.prefix or "—" }}</td>
+  <td style="font-size:12px; color:var(--text-2);">{{ ip.last_reported[:10] if ip.last_reported else "—" }}</td>
+  <td>
+    {% if s >= 80 %}<span class="pill-block"><span style="width:5px;height:5px;border-radius:50%;background:var(--red);flex-shrink:0;"></span> BLOCK</span>
+    {% elif s >= 50 %}<span class="pill-monitor"><span style="width:5px;height:5px;border-radius:50%;background:var(--orange);flex-shrink:0;"></span> MONITOR</span>
+    {% else %}<span class="pill-ok"><span style="width:5px;height:5px;border-radius:50%;background:var(--green);flex-shrink:0;"></span> OK</span>{% endif %}
   </td>
 </tr>
 {% else %}
-<tr>
-  <td colspan="7" class="text-center text-base-content/40 py-8">
-    Tidak ada IP yang cocok dengan filter.
-  </td>
-</tr>
+<tr><td colspan="7" class="empty-state">Tidak ada IP yang cocok dengan filter.</td></tr>
 {% endfor %}

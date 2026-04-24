@@ -20,6 +20,31 @@ from web.routes import sessions as sessions_routes
 _BASE = os.path.dirname(__file__)
 
 
+def _register_filters(templates: Jinja2Templates) -> None:
+    from datetime import datetime, timezone, timedelta
+
+    def to_wib(iso_str: str | None) -> str:
+        if not iso_str:
+            return "—"
+        try:
+            wib = timezone(timedelta(hours=7))
+            dt = datetime.fromisoformat(iso_str.replace("Z", "+00:00"))
+            return dt.astimezone(wib).strftime("%d %b %Y, %H:%M WIB")
+        except Exception:
+            return str(iso_str)[:16]
+
+    def country_flag(code: str | None) -> str:
+        if not code or len(code) != 2:
+            return "🌐"
+        try:
+            return "".join(chr(ord(c.upper()) - ord("A") + 0x1F1E6) for c in code)
+        except Exception:
+            return code
+
+    templates.env.filters["to_wib"] = to_wib
+    templates.env.filters["country_flag"] = country_flag
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await init_db()
@@ -42,6 +67,7 @@ def create_app() -> FastAPI:
         return RedirectResponse(url="/login", status_code=303)
 
     templates = Jinja2Templates(directory=os.path.join(_BASE, "templates"))
+    _register_filters(templates)
     app.state.templates = templates
 
     static_dir = os.path.join(_BASE, "static")

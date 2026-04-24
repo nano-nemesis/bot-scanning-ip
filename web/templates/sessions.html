@@ -2,67 +2,63 @@
 {% block title %}Scan Sessions — AS{{ as_number }}{% endblock %}
 
 {% block content %}
-<div class="flex items-center justify-between mb-6">
-  <div>
-    <h1 class="text-2xl font-bold">Scan Sessions</h1>
-    <p class="text-sm text-base-content/50">Riwayat semua sesi scanning</p>
+<div style="padding:20px 24px;">
+  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
+    <div>
+      <h1 style="font-size:21px; font-weight:700; color:var(--text-1);">Scan Sessions</h1>
+      <p style="font-size:13px; color:var(--text-2); margin-top:3px;">Riwayat semua sesi scanning</p>
+    </div>
   </div>
-</div>
 
-{% if error %}
-<div class="alert alert-error mb-4">{{ error }}</div>
-{% endif %}
+  {% if error %}
+  <div style="background:rgba(248,81,73,.1); border:1px solid rgba(248,81,73,.3); border-radius:8px; padding:12px 16px; color:var(--red); margin-bottom:16px; font-size:13px;">{{ error }}</div>
+  {% endif %}
 
-<div class="card bg-base-200 border border-base-300">
-  <div class="card-body p-4">
-    <div class="overflow-x-auto">
-      <table class="table table-sm table-zebra">
+  <div class="card">
+    <div style="overflow-x:auto;">
+      <table class="data-table">
         <thead>
           <tr>
             <th>#</th>
             <th>Tipe</th>
             <th>Status</th>
-            <th>Mulai</th>
-            <th>Selesai</th>
-            <th class="text-right">Prefix</th>
-            <th class="text-right">Total IP</th>
+            <th>Mulai (WIB)</th>
+            <th>Selesai (WIB)</th>
+            <th style="text-align:right;">Prefix</th>
+            <th style="text-align:right;">Total IP</th>
             <th></th>
           </tr>
         </thead>
         <tbody>
           {% for s in sessions %}
-          <tr class="hover">
-            <td class="font-mono text-xs text-base-content/60">#{{ s.id }}</td>
+          <tr>
+            <td class="mono" style="color:var(--text-2); font-size:12px;">#{{ s.id }}</td>
             <td>
               {% if s.session_type == 'solo' %}
-                <span class="badge badge-outline badge-sm">solo</span>
+                <span class="badge-blue" style="font-size:11px;">solo</span>
               {% else %}
-                <span class="badge badge-primary badge-sm badge-outline">full</span>
+                <span class="badge-blue" style="font-size:11px;">full</span>
               {% endif %}
             </td>
             <td>
               {% if s.status == 'done' %}
-                <span class="badge badge-success badge-sm">✓ done</span>
+                <span class="pill-ok">✓ done</span>
               {% elif s.status == 'running' %}
-                <span class="badge badge-info badge-sm">⟳ running</span>
+                <span class="badge-blue" style="font-size:11px;">⟳ running</span>
               {% else %}
-                <span class="badge badge-error badge-sm">✗ failed</span>
+                <span class="pill-block">✗ failed</span>
               {% endif %}
             </td>
-            <td class="text-xs font-mono">{{ s.started_at[:16].replace("T"," ") if s.started_at else "-" }}</td>
-            <td class="text-xs font-mono">{{ s.finished_at[:16].replace("T"," ") if s.finished_at else "-" }}</td>
-            <td class="text-right text-xs">{{ s.total_prefixes or 0 }}</td>
-            <td class="text-right text-xs">{{ "{:,}".format(s.total_ips or 0) }}</td>
+            <td class="mono" style="font-size:12px; color:var(--text-2);">{{ s.started_at | to_wib }}</td>
+            <td class="mono" style="font-size:12px; color:var(--text-2);">{{ s.finished_at | to_wib if s.finished_at else "—" }}</td>
+            <td style="text-align:right; color:var(--text-2); font-size:13px;">{{ s.total_prefixes or 0 }}</td>
+            <td style="text-align:right; font-size:13px;">{{ "{:,}".format(s.total_ips or 0) }}</td>
             <td>
-              <a href="/sessions/{{ s.id }}" class="btn btn-xs btn-ghost">Detail →</a>
+              <a href="/sessions/{{ s.id }}" class="btn btn-outline btn-sm">Detail →</a>
             </td>
           </tr>
           {% else %}
-          <tr>
-            <td colspan="8" class="text-center text-base-content/40 py-8">
-              Belum ada sesi scan. Gunakan /scan di Telegram.
-            </td>
-          </tr>
+          <tr><td colspan="8" class="empty-state">Belum ada sesi scan. Gunakan /scan di Telegram.</td></tr>
           {% endfor %}
         </tbody>
       </table>

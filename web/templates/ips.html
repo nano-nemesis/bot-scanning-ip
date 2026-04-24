@@ -2,94 +2,78 @@
 {% block title %}IP List — AS{{ as_number }}{% endblock %}
 
 {% block content %}
-<div class="flex items-center justify-between mb-4">
-  <div>
-    <h1 class="text-2xl font-bold">IP List</h1>
-    <p class="text-sm text-base-content/50">
-      Sesi #{{ session_id or "—" }} &middot; {{ "{:,}".format(total) }} IP ditemukan
+<div style="padding:20px 24px;">
+  <div style="margin-bottom:18px;">
+    <h1 style="font-size:21px; font-weight:700; color:var(--text-1);">IP List</h1>
+    <p style="font-size:13px; color:var(--text-2); margin-top:3px;">
+      Sesi #{{ session_id or "—" }} &middot; <strong style="color:var(--text-1);">{{ "{:,}".format(total) }}</strong> IP ditemukan
     </p>
   </div>
-</div>
 
-{# ── Filter form ── #}
-<div class="card bg-base-200 border border-base-300 mb-4">
-  <div class="card-body p-4">
+  {# ── Filters ── #}
+  <div class="card" style="padding:16px 18px; margin-bottom:14px;">
     <form id="filter-form"
           hx-get="/ips"
           hx-target="#ip-tbody"
           hx-push-url="true"
           hx-indicator="#spinner"
-          class="flex flex-wrap gap-3 items-end">
+          style="display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end;">
 
-      {# Hidden fields: preserve session and pagination context #}
       {% if session_id %}<input type="hidden" name="session" value="{{ session_id }}">{% endif %}
       <input type="hidden" name="page" value="1">
 
-      <label class="form-control">
-        <div class="label py-0.5"><span class="label-text text-xs">Cari IP</span></div>
-        <input type="text" name="search_ip" value="{{ search_ip }}"
-               placeholder="1.2.3.4" class="input input-bordered input-sm w-36"
+      <div style="display:flex; flex-direction:column; gap:4px;">
+        <label style="font-size:11px; color:var(--text-2);">Cari IP</label>
+        <input type="text" name="search_ip" value="{{ search_ip }}" placeholder="1.2.3.4" class="f-input" style="width:140px;"
                hx-trigger="input delay:400ms" hx-include="#filter-form">
-      </label>
-
-      <label class="form-control">
-        <div class="label py-0.5"><span class="label-text text-xs">Min Score</span></div>
-        <input type="number" name="min_score" value="{{ min_score or '' }}"
-               placeholder="0" min="0" max="100" class="input input-bordered input-sm w-24">
-      </label>
-
-      <label class="form-control">
-        <div class="label py-0.5"><span class="label-text text-xs">Max Score</span></div>
-        <input type="number" name="max_score" value="{{ max_score or '' }}"
-               placeholder="100" min="0" max="100" class="input input-bordered input-sm w-24">
-      </label>
-
-      <label class="form-control">
-        <div class="label py-0.5"><span class="label-text text-xs">Negara</span></div>
-        <input type="text" name="country" value="{{ country }}"
-               placeholder="CN" maxlength="2" class="input input-bordered input-sm w-20 uppercase">
-      </label>
-
-      <label class="form-control">
-        <div class="label py-0.5"><span class="label-text text-xs">Sort</span></div>
-        <select name="sort_by" class="select select-bordered select-sm">
-          {% for opt in [("abuse_score","Score"),("num_reports","Reports"),("ip_address","IP"),("country_code","Negara"),("scanned_at","Tanggal")] %}
-          <option value="{{ opt[0] }}" {% if sort_by == opt[0] %}selected{% endif %}>{{ opt[1] }}</option>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:4px;">
+        <label style="font-size:11px; color:var(--text-2);">Min Score</label>
+        <input type="number" name="min_score" value="{{ min_score or '' }}" placeholder="0" min="0" max="100" class="f-input" style="width:80px;">
+      </div>
+      <div style="display:flex; flex-direction:column; gap:4px;">
+        <label style="font-size:11px; color:var(--text-2);">Max Score</label>
+        <input type="number" name="max_score" value="{{ max_score or '' }}" placeholder="100" min="0" max="100" class="f-input" style="width:80px;">
+      </div>
+      <div style="display:flex; flex-direction:column; gap:4px;">
+        <label style="font-size:11px; color:var(--text-2);">Negara</label>
+        <input type="text" name="country" value="{{ country }}" placeholder="ID" maxlength="2" class="f-input" style="width:64px; text-transform:uppercase;">
+      </div>
+      <div style="display:flex; flex-direction:column; gap:4px;">
+        <label style="font-size:11px; color:var(--text-2);">Urutkan</label>
+        <select name="sort_by" class="f-input" style="width:120px;">
+          {% for val, lbl in [("abuse_score","Score"),("num_reports","Reports"),("ip_address","IP"),("country_code","Negara"),("scanned_at","Tanggal")] %}
+          <option value="{{ val }}" {% if sort_by == val %}selected{% endif %}>{{ lbl }}</option>
           {% endfor %}
         </select>
-      </label>
-
-      <label class="form-control">
-        <div class="label py-0.5"><span class="label-text text-xs">Arah</span></div>
-        <select name="sort_dir" class="select select-bordered select-sm w-24">
-          <option value="DESC" {% if sort_dir == "DESC" %}selected{% endif %}>↓ DESC</option>
-          <option value="ASC" {% if sort_dir == "ASC" %}selected{% endif %}>↑ ASC</option>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:4px;">
+        <label style="font-size:11px; color:var(--text-2);">Arah</label>
+        <select name="sort_dir" class="f-input" style="width:88px;">
+          <option value="DESC" {% if sort_dir=="DESC" %}selected{% endif %}>↓ DESC</option>
+          <option value="ASC"  {% if sort_dir=="ASC"  %}selected{% endif %}>↑ ASC</option>
         </select>
-      </label>
-
-      <label class="form-control">
-        <div class="label py-0.5"><span class="label-text text-xs">Per halaman</span></div>
-        <select name="per_page" class="select select-bordered select-sm w-20">
+      </div>
+      <div style="display:flex; flex-direction:column; gap:4px;">
+        <label style="font-size:11px; color:var(--text-2);">/halaman</label>
+        <select name="per_page" class="f-input" style="width:72px;">
           {% for opt in per_page_options %}
-          <option value="{{ opt }}" {% if per_page == opt %}selected{% endif %}>{{ opt }}</option>
+          <option value="{{ opt }}" {% if per_page==opt %}selected{% endif %}>{{ opt }}</option>
           {% endfor %}
         </select>
-      </label>
-
-      <div class="flex gap-2 items-end">
-        <button type="submit" class="btn btn-primary btn-sm">Filter</button>
-        <a href="/ips{% if session_id %}?session={{ session_id }}{% endif %}" class="btn btn-ghost btn-sm">Reset</a>
-        <span id="spinner" class="htmx-indicator loading loading-spinner loading-sm text-primary"></span>
+      </div>
+      <div style="display:flex; align-items:flex-end; gap:6px;">
+        <button type="submit" class="btn btn-primary">Filter</button>
+        <a href="/ips{% if session_id %}?session={{ session_id }}{% endif %}" class="btn btn-outline">Reset</a>
+        <span id="spinner" class="htmx-indicator"><span class="loading-spin"></span></span>
       </div>
     </form>
   </div>
-</div>
 
-{# ── IP Table ── #}
-<div class="card bg-base-200 border border-base-300">
-  <div class="card-body p-4">
-    <div class="overflow-x-auto">
-      <table class="table table-xs table-zebra">
+  {# ── Table ── #}
+  <div class="card">
+    <div style="overflow-x:auto;">
+      <table class="data-table">
         <thead>
           <tr>
             <th>IP Address</th>
@@ -109,26 +93,21 @@
 
     {# Pagination #}
     {% if total_pages > 1 %}
-    <div class="flex justify-center mt-4">
-      <div class="join">
-        {% if page > 1 %}
-        <a href="?{{ request.query_params | replace('page=' ~ page, 'page=' ~ (page-1)) }}"
-           class="join-item btn btn-sm">«</a>
-        {% endif %}
-
-        {% for p in range([1, page-2]|max, [total_pages+1, page+3]|min) %}
-        <a href="?{{ request.query_params | replace('page=' ~ page, 'page=' ~ p) }}"
-           class="join-item btn btn-sm {% if p == page %}btn-active{% endif %}">{{ p }}</a>
-        {% endfor %}
-
-        {% if page < total_pages %}
-        <a href="?{{ request.query_params | replace('page=' ~ page, 'page=' ~ (page+1)) }}"
-           class="join-item btn btn-sm">»</a>
-        {% endif %}
-      </div>
+    <div style="display:flex; justify-content:center; padding:14px; border-top:1px solid var(--border); gap:4px; flex-wrap:wrap;">
+      {% if page > 1 %}
+      <a href="?page={{ page-1 }}&per_page={{ per_page }}&sort_by={{ sort_by }}&sort_dir={{ sort_dir }}&search_ip={{ search_ip }}&country={{ country }}{% if min_score %}&min_score={{ min_score }}{% endif %}{% if max_score %}&max_score={{ max_score }}{% endif %}{% if session_id %}&session={{ session_id }}{% endif %}"
+         class="btn btn-outline btn-sm">«</a>
+      {% endif %}
+      {% for p in range([1, page-2]|max, [total_pages+1, page+3]|min) %}
+      <a href="?page={{ p }}&per_page={{ per_page }}&sort_by={{ sort_by }}&sort_dir={{ sort_dir }}&search_ip={{ search_ip }}&country={{ country }}{% if min_score %}&min_score={{ min_score }}{% endif %}{% if max_score %}&max_score={{ max_score }}{% endif %}{% if session_id %}&session={{ session_id }}{% endif %}"
+         class="btn {% if p == page %}btn-primary{% else %}btn-outline{% endif %} btn-sm">{{ p }}</a>
+      {% endfor %}
+      {% if page < total_pages %}
+      <a href="?page={{ page+1 }}&per_page={{ per_page }}&sort_by={{ sort_by }}&sort_dir={{ sort_dir }}&search_ip={{ search_ip }}&country={{ country }}{% if min_score %}&min_score={{ min_score }}{% endif %}{% if max_score %}&max_score={{ max_score }}{% endif %}{% if session_id %}&session={{ session_id }}{% endif %}"
+         class="btn btn-outline btn-sm">»</a>
+      {% endif %}
     </div>
     {% endif %}
-
   </div>
 </div>
 {% endblock %}
