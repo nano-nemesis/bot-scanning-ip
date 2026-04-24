@@ -5,7 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}AS{{ as_number }} Scanner{% endblock %}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Montserrat:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/htmx.org@2.0.4" defer></script>
   <style>
@@ -25,7 +26,6 @@
       --orange:     #d29922;
       --green:      #3fb950;
       --yellow:     #e3b341;
-      --chart-grid: rgba(255,255,255,0.05);
     }
     [data-theme="light"] {
       --bg-base:    #f6f8fa;
@@ -42,63 +42,142 @@
       --orange:     #9a6700;
       --green:      #1a7f37;
       --yellow:     #9a6700;
-      --chart-grid: rgba(0,0,0,0.08);
     }
 
-    /* ── Reset & Base ── */
+    /* ── Reset ── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Inter', sans-serif; background: var(--bg-base); color: var(--text-1); min-height: 100vh; transition: background .2s, color .2s; }
-    ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-track { background: var(--bg-sidebar); }
+
+    /* ── Typography ── */
+    body {
+      font-family: 'Montserrat', sans-serif;
+      background: var(--bg-base);
+      color: var(--text-1);
+      min-height: 100vh;
+      transition: background .2s, color .2s;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    h1, h2, h3, h4, h5,
+    .page-title, .section-title, .card-title { font-family: 'Poppins', sans-serif; }
+    code, .mono, .ip-addr, pre { font-family: 'JetBrains Mono', 'Fira Code', monospace; }
+
+    /* ── Scrollbar ── */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-    .mono, code, .ip-addr { font-family: 'JetBrains Mono','Fira Code','Courier New',monospace; }
 
     /* ── Layout ── */
-    .layout { display: flex; min-height: 100vh; }
     #sidebar {
-      width: 130px; min-width: 130px;
+      width: 130px;
       background: var(--bg-sidebar);
       border-right: 1px solid var(--border);
-      display: flex; flex-direction: column;
-      position: fixed; top: 0; left: 0; height: 100vh; z-index: 40;
-      transition: left .25s, background .2s;
+      position: fixed;
+      top: 0; left: 0; bottom: 0;        /* bottom:0 lebih reliable dari height:100vh */
+      z-index: 40;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      transition: left .25s cubic-bezier(.4,0,.2,1), background .2s;
     }
-    #main { flex: 1; margin-left: 130px; display: flex; flex-direction: column; min-height: 100vh; }
-    #mob-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 39; }
-
-    /* ── Sidebar nav ── */
-    .sidebar-link {
-      display: flex; flex-direction: column; align-items: center; gap: 4px;
-      padding: 9px 6px; border-radius: 7px; font-size: 10px; font-weight: 500;
-      color: var(--text-2); transition: all .15s; text-decoration: none;
+    #sidebar-nav { flex: 1; overflow-y: auto; padding: 6px; }
+    #main { margin-left: 130px; min-height: 100vh; display: flex; flex-direction: column; }
+    #mob-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,.55); z-index: 39;
+      backdrop-filter: blur(2px);
     }
-    .sidebar-link svg { width: 18px; height: 18px; flex-shrink: 0; }
-    .sidebar-link:hover { color: var(--text-1); background: rgba(128,128,128,.08); }
-    .sidebar-link.active { color: var(--blue); background: rgba(56,139,253,.12); }
-    [data-theme="light"] .sidebar-link.active { color: var(--blue); background: rgba(9,105,218,.1); }
+    body.mob-open #mob-overlay { display: block; }
+    body.mob-open { overflow: hidden; }
 
-    /* ── Shared components ── */
+    /* ── Mobile ── */
+    #mob-topbar {
+      display: none;
+      background: var(--bg-sidebar);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 16px;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky; top: 0; z-index: 30;
+    }
+    #mob-ham {
+      background: none; border: none; cursor: pointer;
+      color: var(--text-2); padding: 4px; line-height: 0;
+    }
+    #mob-ham:hover { color: var(--text-1); }
+    @media (max-width: 1023px) {
+      #sidebar { left: -134px; box-shadow: none; }
+      #sidebar.open { left: 0; box-shadow: 6px 0 32px rgba(0,0,0,.45); }
+      #main { margin-left: 0; }
+      #mob-topbar { display: flex; }
+    }
+
+    /* ── Sidebar nav links ── */
+    .nav-link {
+      display: flex; flex-direction: column; align-items: center;
+      gap: 3px; padding: 9px 6px; border-radius: 8px;
+      font-size: 10px; font-weight: 500;
+      color: var(--text-2); text-decoration: none;
+      transition: all .15s; font-family: 'Montserrat', sans-serif;
+    }
+    .nav-link svg { width: 18px; height: 18px; flex-shrink: 0; }
+    .nav-link:hover { color: var(--text-1); background: rgba(128,128,128,.08); }
+    .nav-link.active { color: var(--blue); background: rgba(56,139,253,.12); }
+    [data-theme="light"] .nav-link.active { background: rgba(9,105,218,.1); }
+
+    /* ── Cards ── */
     .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; transition: background .2s, border-color .2s; }
-    .badge-red    { background: rgba(248,81,73,.12);  color: var(--red);    border: 1px solid rgba(248,81,73,.25);  border-radius: 20px; padding: 2px 9px; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; }
-    .badge-orange { background: rgba(210,153,34,.12); color: var(--orange); border: 1px solid rgba(210,153,34,.25); border-radius: 20px; padding: 2px 9px; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; }
-    .badge-green  { background: rgba(63,185,80,.12);  color: var(--green);  border: 1px solid rgba(63,185,80,.25);  border-radius: 20px; padding: 2px 9px; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; }
+    .card-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid var(--border); }
+
+    /* ── Score badges ── */
+    .badge-red    { background: rgba(248,81,73,.12);  color: var(--red);    border: 1px solid rgba(248,81,73,.25);  border-radius: 20px; padding: 2px 9px; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; font-family: 'JetBrains Mono', monospace; }
+    .badge-orange { background: rgba(210,153,34,.12); color: var(--orange); border: 1px solid rgba(210,153,34,.25); border-radius: 20px; padding: 2px 9px; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; font-family: 'JetBrains Mono', monospace; }
+    .badge-green  { background: rgba(63,185,80,.12);  color: var(--green);  border: 1px solid rgba(63,185,80,.25);  border-radius: 20px; padding: 2px 9px; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; font-family: 'JetBrains Mono', monospace; }
     .badge-blue   { background: rgba(56,139,253,.12); color: var(--blue);   border: 1px solid rgba(56,139,253,.25); border-radius: 20px; padding: 2px 9px; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; }
-    .pill-block   { background: rgba(248,81,73,.1);  color: var(--red);    border: 1px solid rgba(248,81,73,.2);  border-radius: 20px; padding: 3px 9px; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px; }
-    .pill-monitor { background: rgba(210,153,34,.1); color: var(--orange); border: 1px solid rgba(210,153,34,.2); border-radius: 20px; padding: 3px 9px; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px; }
-    .pill-ok      { background: rgba(63,185,80,.1);  color: var(--green);  border: 1px solid rgba(63,185,80,.2);  border-radius: 20px; padding: 3px 9px; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px; }
+    .pill-block   { background: rgba(248,81,73,.1);   color: var(--red);    border: 1px solid rgba(248,81,73,.2);   border-radius: 20px; padding: 3px 9px; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+    .pill-monitor { background: rgba(210,153,34,.1);  color: var(--orange); border: 1px solid rgba(210,153,34,.2);  border-radius: 20px; padding: 3px 9px; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+    .pill-ok      { background: rgba(63,185,80,.1);   color: var(--green);  border: 1px solid rgba(63,185,80,.2);   border-radius: 20px; padding: 3px 9px; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+    .pill-dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
+
+    /* ── Status tag (sessions) ── */
+    .tag-done    { background: rgba(63,185,80,.1);  color: var(--green);  border: 1px solid rgba(63,185,80,.2);  border-radius: 6px; padding: 2px 8px; font-size: 11px; font-weight: 600; }
+    .tag-running { background: rgba(56,139,253,.1); color: var(--blue);   border: 1px solid rgba(56,139,253,.2); border-radius: 6px; padding: 2px 8px; font-size: 11px; font-weight: 600; }
+    .tag-failed  { background: rgba(248,81,73,.1);  color: var(--red);    border: 1px solid rgba(248,81,73,.2);  border-radius: 6px; padding: 2px 8px; font-size: 11px; font-weight: 600; }
+    .tag-type    { background: rgba(139,148,158,.1); color: var(--text-2); border: 1px solid var(--border); border-radius: 6px; padding: 2px 8px; font-size: 11px; }
+
+    /* ── Tabs ── */
+    .tabs { display: flex; gap: 2px; background: var(--bg-hover); border-radius: 9px; padding: 3px; overflow-x: auto; }
+    .tab-btn {
+      padding: 6px 14px; border-radius: 7px; font-size: 12px; font-weight: 500;
+      color: var(--text-2); background: none; border: none; cursor: pointer;
+      white-space: nowrap; transition: all .15s; font-family: 'Montserrat', sans-serif;
+    }
+    .tab-btn:hover { color: var(--text-1); background: rgba(128,128,128,.08); }
+    .tab-btn.active { color: var(--text-1); background: var(--bg-card); box-shadow: 0 1px 4px rgba(0,0,0,.3); }
 
     /* ── Tables ── */
     .data-table { width: 100%; border-collapse: collapse; }
-    .data-table thead th { padding: 10px 14px; text-align: left; font-size: 11px; font-weight: 500; color: var(--text-2); text-transform: uppercase; letter-spacing: .05em; border-bottom: 1px solid var(--border); white-space: nowrap; }
+    .data-table thead th {
+      padding: 10px 14px; text-align: left;
+      font-size: 10px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase;
+      color: var(--text-2); border-bottom: 1px solid var(--border);
+      white-space: nowrap; font-family: 'Montserrat', sans-serif;
+    }
     .data-table tbody td { padding: 10px 14px; font-size: 13px; border-bottom: 1px solid var(--bg-hover); color: var(--text-1); }
     .data-table tbody tr:last-child td { border-bottom: none; }
     .data-table tbody tr:hover td { background: var(--bg-hover); }
 
     /* ── Forms ── */
-    .f-input { background: var(--bg-sidebar); border: 1px solid var(--border); color: var(--text-1); border-radius: 7px; padding: 6px 10px; font-size: 13px; font-family: inherit; outline: none; transition: border .15s; }
+    .f-input {
+      background: var(--bg-sidebar); border: 1px solid var(--border);
+      color: var(--text-1); border-radius: 7px; padding: 6px 10px;
+      font-size: 13px; font-family: 'Montserrat', sans-serif; outline: none;
+      transition: border .15s;
+    }
     .f-input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(56,139,253,.1); }
     .f-input::placeholder { color: var(--text-3); }
-    .btn     { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 7px; font-size: 13px; font-weight: 500; cursor: pointer; border: none; transition: all .15s; text-decoration: none; font-family: inherit; }
+
+    /* ── Buttons ── */
+    .btn { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 7px; font-size: 13px; font-weight: 500; cursor: pointer; border: none; transition: all .15s; text-decoration: none; font-family: 'Montserrat', sans-serif; }
     .btn-primary { background: #238636; color: #fff; }
     .btn-primary:hover { background: #2ea043; }
     .btn-outline { background: transparent; color: var(--text-2); border: 1px solid var(--border); }
@@ -107,78 +186,67 @@
     .btn-icon { background: transparent; border: none; cursor: pointer; color: var(--text-2); padding: 4px; line-height: 0; transition: color .15s; }
     .btn-icon:hover { color: var(--red); }
 
-    /* ── Utility ── */
+    /* ── Grid helpers ── */
+    .grid-4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    @media (max-width: 860px)  { .grid-4 { grid-template-columns: 1fr 1fr; gap: 10px; } }
+    @media (max-width: 600px)  { .grid-2 { grid-template-columns: 1fr; } }
+    @media (max-width: 480px)  { .grid-4 { gap: 8px; } }
+
+    /* ── Misc ── */
     .htmx-indicator { display: none; }
     .htmx-request .htmx-indicator { display: inline-block; }
     .loading-spin { width: 14px; height: 14px; border: 2px solid var(--border); border-top-color: var(--blue); border-radius: 50%; animation: spin .6s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
-    .empty-state { text-align: center; padding: 40px 20px; color: var(--text-2); font-size: 13px; }
-    .breadcrumb { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-2); margin-bottom: 16px; }
+    .empty-state { text-align: center; padding: 36px 20px; color: var(--text-2); font-size: 13px; }
+    .breadcrumb { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--text-2); margin-bottom: 16px; }
     .breadcrumb a { color: var(--text-2); text-decoration: none; }
-    .breadcrumb a:hover { color: var(--blue); }
-    .breadcrumb-sep { color: var(--text-3); }
-
-    /* ── Mobile ── */
-    #mob-topbar { display: none; background: var(--bg-sidebar); border-bottom: 1px solid var(--border); padding: 12px 16px; align-items: center; gap: 10px; position: sticky; top: 0; z-index: 30; }
-    #mob-ham { background: none; border: none; cursor: pointer; color: var(--text-2); padding: 2px; line-height: 0; }
-    #mob-ham:hover { color: var(--text-1); }
-
-    @media (max-width: 1023px) {
-      #sidebar { left: -134px; box-shadow: none; }
-      #sidebar.open { left: 0; box-shadow: 4px 0 24px rgba(0,0,0,.4); }
-      body.mob-open #mob-overlay { display: block; }
-      #main { margin-left: 0; }
-      #mob-topbar { display: flex; }
-    }
-
-    /* ── Responsive grid helpers ── */
-    .grid-4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; }
-    .grid-2 { display: grid; grid-template-columns: repeat(2,1fr); gap: 14px; }
-    @media (max-width: 900px) {
-      .grid-4 { grid-template-columns: repeat(2,1fr); }
-    }
-    @media (max-width: 640px) {
-      .grid-4 { grid-template-columns: 1fr 1fr; gap: 10px; }
-      .grid-2 { grid-template-columns: 1fr; }
-    }
+    .breadcrumb a:hover { color: var(--blue); text-decoration: underline; }
+    .score-bar-bg { width: 52px; height: 4px; background: var(--bg-hover); border-radius: 3px; overflow: hidden; display: inline-block; vertical-align: middle; }
+    .score-bar-fill { height: 100%; border-radius: 3px; }
+    @keyframes pulse-red { 0%,100%{opacity:1} 50%{opacity:.4} }
+    .pulse-red { animation: pulse-red 2s ease-in-out infinite; }
   </style>
   {% block head %}{% endblock %}
 </head>
 <body>
 
-<div class="layout">
+<div style="display:flex; min-height:100vh;">
 
-  {# ── Sidebar ── #}
+  {# ── Sidebar (fixed, never scrolls) ── #}
   <aside id="sidebar">
-    <div style="padding:16px 8px 12px; border-bottom:1px solid var(--border); text-align:center;">
-      <div style="font-size:22px; margin-bottom:5px;">🛡</div>
-      <div style="font-size:11px; font-weight:700; color:var(--text-1); line-height:1.3;">AS{{ as_number }}</div>
-      <div style="font-size:9px; color:var(--text-2); margin-top:2px; line-height:1.4;">IP Abuse<br>Scanner</div>
+
+    {# Logo #}
+    <div style="padding:14px 8px 12px; border-bottom:1px solid var(--border); text-align:center; flex-shrink:0;">
+      <div style="font-size:22px; margin-bottom:4px;">🛡</div>
+      <div class="page-title" style="font-size:11px; font-weight:700; color:var(--text-1); line-height:1.3;">AS{{ as_number }}</div>
+      <div style="font-size:9px; color:var(--text-2); margin-top:2px; line-height:1.5; font-family:'Montserrat',sans-serif;">IP Abuse<br>Scanner</div>
     </div>
 
-    <nav style="flex:1; padding:8px; display:flex; flex-direction:column; gap:2px; overflow-y:auto;">
-      <a href="/"        class="sidebar-link {% if active_page=='dashboard' %}active{% endif %}">
+    {# Nav #}
+    <div id="sidebar-nav">
+      <a href="/"        class="nav-link {% if active_page=='dashboard' %}active{% endif %}">
         <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
         Dashboard
       </a>
-      <a href="/sessions" class="sidebar-link {% if active_page=='sessions' %}active{% endif %}">
+      <a href="/sessions" class="nav-link {% if active_page=='sessions' %}active{% endif %}">
         <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
         Sessions
       </a>
-      <a href="/ips"     class="sidebar-link {% if active_page=='ips' %}active{% endif %}">
+      <a href="/ips"     class="nav-link {% if active_page=='ips' %}active{% endif %}">
         <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
         IP List
       </a>
-    </nav>
+    </div>
 
-    {# Theme toggle + user #}
-    <div style="padding:10px 8px; border-top:1px solid var(--border); display:flex; flex-direction:column; align-items:center; gap:8px;">
-      <button id="theme-toggle" onclick="toggleTheme()" title="Toggle light/dark" style="background:rgba(128,128,128,.08); border:1px solid var(--border); border-radius:7px; cursor:pointer; padding:6px 10px; display:flex; align-items:center; gap:5px; font-size:10px; color:var(--text-2); width:100%; justify-content:center; transition:all .15s;">
-        <span id="theme-icon">☀️</span>
-        <span id="theme-label">Light</span>
+    {# Theme toggle + user ── always visible, tidak ikut scroll #}
+    <div style="flex-shrink:0; padding:10px 8px; border-top:1px solid var(--border); display:flex; flex-direction:column; align-items:center; gap:8px;">
+      <button onclick="toggleTheme()" title="Toggle theme"
+        style="width:100%; background:rgba(128,128,128,.08); border:1px solid var(--border); border-radius:7px; cursor:pointer; padding:5px 8px; display:flex; align-items:center; gap:5px; font-size:10px; color:var(--text-2); justify-content:center; transition:all .15s; font-family:'Montserrat',sans-serif;">
+        <span id="theme-icon">☀️</span><span id="theme-label">Light</span>
       </button>
       <div style="display:flex; align-items:center; gap:6px; width:100%; padding:0 2px;">
-        <div style="width:26px; height:26px; border-radius:50%; background:rgba(56,139,253,.15); color:var(--blue); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; flex-shrink:0;">
+        <div style="width:26px; height:26px; border-radius:50%; background:rgba(56,139,253,.15); color:var(--blue); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; flex-shrink:0; font-family:'Poppins',sans-serif;">
           {{ current_user[0]|upper }}
         </div>
         <span style="font-size:10px; color:var(--text-2); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1;">{{ current_user }}</span>
@@ -191,19 +259,24 @@
     </div>
   </aside>
 
-  {# ── Mobile topbar ── #}
+  {# ── Main area ── #}
   <div id="main">
+
+    {# Mobile topbar #}
     <div id="mob-topbar">
-      <button id="mob-ham" onclick="toggleSidebar()">
-        <svg style="width:20px;height:20px;" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
-      </button>
-      <span style="font-size:14px; font-weight:600; color:var(--text-1);">🛡 AS{{ as_number }}</span>
+      <div style="display:flex; align-items:center; gap:10px;">
+        <button id="mob-ham" onclick="toggleSidebar()">
+          <svg style="width:20px;height:20px;" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </button>
+        <span class="page-title" style="font-size:14px; font-weight:600; color:var(--text-1);">🛡 AS{{ as_number }}</span>
+      </div>
+      {# Realtime WIB clock (mobile) #}
+      <span id="mob-clock" style="font-size:11px; color:var(--text-2); font-family:'JetBrains Mono',monospace;"></span>
     </div>
 
-    {# Page content #}
     {% block content %}{% endblock %}
 
-    <footer style="padding:12px 24px; text-align:center; font-size:11px; color:var(--text-3); border-top:1px solid var(--border); margin-top:auto;">
+    <footer style="padding:12px 24px; text-align:center; font-size:11px; color:var(--text-3); border-top:1px solid var(--border); margin-top:auto; font-family:'Montserrat',sans-serif;">
       AS{{ as_number }} IP Abuse Scanner
     </footer>
   </div>
@@ -214,31 +287,30 @@
 <div id="mob-overlay" onclick="closeSidebar()"></div>
 
 <script>
-  // ── Theme ──
+  // ── Theme init (before paint) ──
   (function() {
-    const saved = localStorage.getItem('theme') || 'dark';
-    document.documentElement.setAttribute('data-theme', saved);
-    updateThemeBtn(saved);
+    const t = localStorage.getItem('theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', t);
+    updateThemeBtn(t);
   })();
 
   function toggleTheme() {
-    const current = document.documentElement.getAttribute('data-theme');
-    const next = current === 'dark' ? 'light' : 'dark';
+    const cur  = document.documentElement.getAttribute('data-theme');
+    const next = cur === 'dark' ? 'light' : 'dark';
     document.documentElement.setAttribute('data-theme', next);
     localStorage.setItem('theme', next);
     updateThemeBtn(next);
     if (typeof onThemeChange === 'function') onThemeChange(next);
   }
-
-  function updateThemeBtn(theme) {
+  function updateThemeBtn(t) {
     const icon = document.getElementById('theme-icon');
-    const label = document.getElementById('theme-label');
+    const lbl  = document.getElementById('theme-label');
     if (!icon) return;
-    if (theme === 'dark') { icon.textContent = '☀️'; label.textContent = 'Light'; }
-    else                  { icon.textContent = '🌙'; label.textContent = 'Dark'; }
+    icon.textContent = t === 'dark' ? '☀️' : '🌙';
+    lbl.textContent  = t === 'dark' ? 'Light' : 'Dark';
   }
 
-  // ── Sidebar mobile ──
+  // ── Sidebar (mobile) ──
   function toggleSidebar() {
     document.getElementById('sidebar').classList.toggle('open');
     document.body.classList.toggle('mob-open');
@@ -247,6 +319,20 @@
     document.getElementById('sidebar').classList.remove('open');
     document.body.classList.remove('mob-open');
   }
+
+  // ── Realtime WIB clock ──
+  function tickWIB() {
+    const now  = new Date();
+    const wib  = new Date(now.getTime() + 7 * 3600 * 1000);
+    const iso  = wib.toISOString();
+    const str  = iso.slice(0,10) + ' ' + iso.slice(11,19) + ' WIB';
+    ['wib-clock','mob-clock'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = str;
+    });
+  }
+  tickWIB();
+  setInterval(tickWIB, 1000);
 </script>
 
 {% block scripts %}{% endblock %}

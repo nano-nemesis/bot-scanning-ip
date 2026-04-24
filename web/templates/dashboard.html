@@ -48,7 +48,7 @@
       <span style="width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);flex-shrink:0;"></span>
       <span style="font-size:12px; color:var(--text-1); font-weight:500;">Scan Terbaru — {{ node_name }}</span>
       <span style="color:var(--border);">|</span>
-      <span style="font-size:12px; color:var(--text-2);">{{ session.started_at | to_wib }}</span>
+      <span id="wib-clock" style="font-size:12px; color:var(--text-2); font-family:'JetBrains Mono',monospace;">{{ session.started_at | to_wib }}</span>
     </div>
     <div style="display:inline-flex; align-items:center; gap:5px; font-size:11px; color:var(--text-2); padding:0 2px;">
       <svg style="width:11px;height:11px;color:var(--blue);flex-shrink:0;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
