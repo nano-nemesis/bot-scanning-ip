@@ -8,7 +8,7 @@ from fastapi.templating import Jinja2Templates
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 
-from db import init_db
+from db import init_db, init_web_users
 from web.auth import NotAuthenticated
 from web.config import web_config
 from web.limiter import limiter
@@ -16,6 +16,7 @@ from web.routes import auth as auth_routes
 from web.routes import dashboard as dashboard_routes
 from web.routes import ips as ips_routes
 from web.routes import sessions as sessions_routes
+from web.routes import settings as settings_routes
 
 _BASE = os.path.dirname(__file__)
 
@@ -50,6 +51,7 @@ def _register_filters(templates: Jinja2Templates) -> None:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await init_db()
+    await init_web_users(web_config.admin_username, web_config.admin_password_hash)
     yield
 
 
@@ -79,6 +81,7 @@ def create_app() -> FastAPI:
     app.include_router(dashboard_routes.router)
     app.include_router(sessions_routes.router)
     app.include_router(ips_routes.router)
+    app.include_router(settings_routes.router)
 
     return app
 

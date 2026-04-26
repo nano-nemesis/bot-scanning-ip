@@ -396,6 +396,103 @@ async def get_session_prefix_stats(session_id: int) -> list[dict]:
         return [dict(r) for r in rows]
 
 
+# ─────────────────────────────────────────────────────────────
+# Web Users
+# ─────────────────────────────────────────────────────────────
+
+_CREATE_USERS = """
+CREATE TABLE IF NOT EXISTS web_users (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    username      TEXT UNIQUE NOT NULL,
+    password_hash TEXT NOT NULL,
+    created_at    TEXT NOT NULL
+);
+"""
+
+
+async def init_web_users(default_username: str, default_password_hash: str) -> None:
+    """Create table and seed from env on first run."""
+    async with aiosqlite.connect(config.db_path) as db:
+        await db.executescript(_CREATE_USERS)
+        await db.commit()
+        cursor = await db.execute("SELECT COUNT(*) FROM web_users")
+        if (await cursor.fetchone())[0] == 0 and default_username and default_password_hash:
+            await db.execute(
+                "INSERT INTO web_users (username, password_hash, created_at) VALUES (?,?,?)",
+                (default_username, default_password_hash, _now()),
+            )
+            await db.commit()
+            logger.info("Seeded first web user: %s", default_username)
+
+
+async def get_web_users() -> list[dict]:
+    async with aiosqlite.connect(config.db_path) as db:
+        db.row_factory = aiosqlite.Row
+        cursor = await db.execute("SELECT id, username, created_at FROM web_users ORDER BY id")
+        return [dict(r) for r in await cursor.fetchall()]
+
+
+async def get_web_user_by_username(username: str) -> dict | None:
+    async with aiosqlite.connect(config.db_path) as db:
+        db.row_factory = aiosqlite.Row
+        cursor = await db.execute(
+            "SELECT * FROM web_users WHERE username = ?", (username,)
+        )
+        row = await cursor.fetchone()
+        return dict(row) if row else None
+
+
+async def get_web_user_by_id(user_id: int) -> dict | None:
+    async with aiosqlite.connect(config.db_path) as db:
+        db.row_factory = aiosqlite.Row
+        cursor = await db.execute("SELECT * FROM web_users WHERE id = ?", (user_id,))
+        row = await cursor.fetchone()
+        return dict(row) if row else None
+
+
+async def create_web_user(username: str, password_hash: str) -> int:
+    async with aiosqlite.connect(config.db_path) as db:
+        cursor = await db.execute(
+            "INSERT INTO web_users (username, password_hash, created_at) VALUES (?,?,?)",
+            (username, password_hash, _now()),
+        )
+        await db.commit()
+        return cursor.lastrowid
+
+
+async def update_web_user_password(user_id: int, new_hash: str) -> None:
+    async with aiosqlite.connect(config.db_path) as db:
+        await db.execute(
+            "UPDATE web_users SET password_hash = ? WHERE id = ?", (new_hash, user_id)
+        )
+        await db.commit()
+
+
+async def update_web_user_username(user_id: int, new_username: str) -> bool:
+    """Returns False if username already taken."""
+    async with aiosqlite.connect(config.db_path) as db:
+        try:
+            await db.execute(
+                "UPDATE web_users SET username = ? WHERE id = ?", (new_username, user_id)
+            )
+            await db.commit()
+            return True
+        except Exception:
+            return False
+
+
+async def delete_web_user(user_id: int) -> None:
+    async with aiosqlite.connect(config.db_path) as db:
+        await db.execute("DELETE FROM web_users WHERE id = ?", (user_id,))
+        await db.commit()
+
+
+async def count_web_users() -> int:
+    async with aiosqlite.connect(config.db_path) as db:
+        cursor = await db.execute("SELECT COUNT(*) FROM web_users")
+        return (await cursor.fetchone())[0]
+
+
 async def search_ip_across_sessions(ip_address: str, limit: int = 20) -> list[dict]:
     async with aiosqlite.connect(config.db_path) as db:
         db.row_factory = aiosqlite.Row
