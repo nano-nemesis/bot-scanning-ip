@@ -5,12 +5,12 @@
 {% endblock %}
 
 {% block content %}
-<div style="padding:20px 24px; max-width:1200px;">
+<div style="padding:28px 36px; max-width:1300px;">
 
   {# Breadcrumb #}
-  <div class="breadcrumb">
+  <div class="crumb">
     <a href="/sessions">Sessions</a>
-    <span class="breadcrumb-sep">›</span>
+    <span class="crumb-sep">›</span>
     <span style="color:var(--text-1);">Session #{{ session.id }}</span>
   </div>
 
@@ -40,7 +40,7 @@
   {% set reported  = summary.total_reported_ips or 0 %}
   {% set pct       = (reported / total_ips * 100) if total_ips > 0 else 0 %}
 
-  <div class="grid-4" style="margin-bottom:18px;">
+  <div class="g4" style="margin-bottom:18px;">
     <div class="card" style="padding:16px 18px;">
       <p style="font-size:10px; color:var(--text-2); text-transform:uppercase; letter-spacing:.07em; margin-bottom:6px; font-family:'Montserrat',sans-serif;">Total IP</p>
       <p class="page-title" style="font-size:26px; font-weight:700; color:var(--text-1); line-height:1; font-variant-numeric:tabular-nums;">{{ "{:,}".format(total_ips) }}</p>
@@ -85,7 +85,7 @@
   {# ── Panel: Top IPs ── #}
   <div id="panel-ips" class="card">
     <div style="overflow-x:auto;">
-      <table class="data-table">
+      <table class="dt">
         <thead>
           <tr>
             <th style="width:32px;">#</th>
@@ -108,8 +108,8 @@
                 {% if s >= 80 %}<span class="badge-red">{{ s }}</span>
                 {% elif s >= 20 %}<span class="badge-orange">{{ s }}</span>
                 {% else %}<span class="badge-green">{{ s }}</span>{% endif %}
-                <div class="score-bar-bg">
-                  <div class="score-bar-fill" style="width:{{ s }}%; background:{% if s >= 80 %}var(--red){% elif s >= 20 %}var(--orange){% else %}var(--green){% endif %};"></div>
+                <div class="sbar-bg">
+                  <div class="sbar-fill" style="width:{{ s }}%; background:{% if s >= 80 %}var(--red){% elif s >= 20 %}var(--orange){% else %}var(--green){% endif %};"></div>
                 </div>
               </div>
             </td>
@@ -153,7 +153,7 @@
   {# ── Panel: Prefix ── #}
   <div id="panel-prefix" class="card" style="display:none;">
     <div style="overflow-x:auto;">
-      <table class="data-table">
+      <table class="dt">
         <thead>
           <tr>
             <th>Prefix</th>
@@ -190,7 +190,7 @@
       <span style="font-size:13px; color:var(--red); font-weight:600;">{{ alerts|length }} IP dengan score ≥ {{ alert_threshold }}</span>
     </div>
     <div style="overflow-x:auto;">
-      <table class="data-table">
+      <table class="dt">
         <thead><tr><th>IP Address</th><th>Score</th><th>Reports</th><th>Negara</th></tr></thead>
         <tbody>
           {% for ip in alerts %}

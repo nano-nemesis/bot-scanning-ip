@@ -6,20 +6,20 @@
   .stat-card {
     background: var(--bg-card);
     border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 18px 20px;
+    border-radius: 14px;
+    padding: 22px 24px;
     position: relative;
     overflow: hidden;
     transition: border-color .2s, transform .15s, background .2s;
   }
-  .stat-card:hover { border-color: var(--border-2); transform: translateY(-1px); }
-  .stat-accent { position: absolute; bottom: 0; left: 0; right: 0; height: 2px; }
-  .stat-icon { width: 36px; height: 36px; border-radius: 9px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-  .stat-icon svg { width: 17px; height: 17px; }
-  .section-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid var(--border); }
-  .section-title { font-size: 13px; font-weight: 600; color: var(--text-1); }
+  .stat-card:hover { border-color: var(--border-2); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,.15); }
+  .stat-accent { position: absolute; bottom: 0; left: 0; right: 0; height: 3px; }
+  .stat-icon { width: 42px; height: 42px; border-radius: 11px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .stat-icon svg { width: 20px; height: 20px; }
+  .section-head { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--border); }
+  .section-title { font-size: 14px; font-weight: 800; color: var(--text-1); font-family: 'Poppins', sans-serif; }
   .section-sub   { font-size: 11px; color: var(--text-2); margin-top: 2px; }
-  .chart-wrap    { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; transition: background .2s; }
+  .chart-wrap    { background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; transition: background .2s; }
   .score-bar-bg  { width: 56px; height: 5px; background: var(--bg-hover); border-radius: 3px; overflow: hidden; }
   .score-bar-fill { height: 100%; border-radius: 3px; }
   .rank-n { width: 20px; height: 20px; border-radius: 5px; display: inline-flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; background: var(--bg-hover); color: var(--text-2); flex-shrink: 0; }
@@ -34,12 +34,12 @@
 {% endblock %}
 
 {% block content %}
-<div style="padding:20px 24px; max-width:1400px;">
+<div style="padding:28px 36px; max-width:1440px;">
 
 {# ── Header ── #}
 <div style="display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:22px;">
   <div>
-    <h1 style="font-size:21px; font-weight:700; color:var(--text-1); margin-bottom:3px;">Dashboard</h1>
+    <h1 class="page-title" style="font-size:26px; color:var(--text-1); margin-bottom:4px;">Dashboard</h1>
     <p style="font-size:13px; color:var(--text-2);">Monitoring AS{{ as_number }}</p>
   </div>
   {% if session %}
@@ -75,14 +75,14 @@
 {% else %}
 
 {# ── Stat Cards ── #}
-<div class="grid-4" style="margin-bottom:16px;">
+<div class="g4" style="margin-bottom:16px;">
 
   {# Total IP #}
   <div class="stat-card">
     <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px;">
       <div>
         <p style="font-size:10px; color:var(--text-2); text-transform:uppercase; letter-spacing:.08em; margin-bottom:6px;">Total IP</p>
-        <p style="font-size:28px; font-weight:700; color:var(--text-1); line-height:1; font-variant-numeric:tabular-nums;">{{ "{:,}".format(total_ips) }}</p>
+        <p style="font-size:36px; font-family:'Poppins',sans-serif; font-weight:800; color:var(--text-1); line-height:1; font-variant-numeric:tabular-nums;">{{ "{:,}".format(total_ips) }}</p>
       </div>
       <div class="stat-icon" style="background:rgba(248,81,73,.12);">
         <svg style="color:var(--red);" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h.5A2.5 2.5 0 0020 5.5v-1.565"/></svg>
@@ -104,7 +104,7 @@
     <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px;">
       <div>
         <p style="font-size:10px; color:var(--text-2); text-transform:uppercase; letter-spacing:.08em; margin-bottom:6px;">IP Dilaporkan</p>
-        <p style="font-size:28px; font-weight:700; color:var(--yellow); line-height:1; font-variant-numeric:tabular-nums;">{{ "{:,}".format(reported) }}</p>
+        <p style="font-size:36px; font-family:'Poppins',sans-serif; font-weight:800; color:var(--yellow); line-height:1; font-variant-numeric:tabular-nums;">{{ "{:,}".format(reported) }}</p>
       </div>
       <div class="stat-icon" style="background:rgba(227,179,65,.12);">
         <svg style="color:var(--yellow);" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
@@ -126,7 +126,7 @@
     <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px;">
       <div>
         <p style="font-size:10px; color:var(--text-2); text-transform:uppercase; letter-spacing:.08em; margin-bottom:6px;">Avg Score</p>
-        <p style="font-size:28px; font-weight:700; color:var(--blue); line-height:1; font-variant-numeric:tabular-nums;">{{ "%.1f"|format(avg_score) }}</p>
+        <p style="font-size:36px; font-family:'Poppins',sans-serif; font-weight:800; color:var(--blue); line-height:1; font-variant-numeric:tabular-nums;">{{ "%.1f"|format(avg_score) }}</p>
       </div>
       <div class="stat-icon" style="background:rgba(56,139,253,.12);">
         <svg style="color:var(--blue);" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
@@ -148,7 +148,7 @@
     <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
       <div>
         <p style="font-size:10px; color:var(--text-2); text-transform:uppercase; letter-spacing:.08em; margin-bottom:6px;">Max Score</p>
-        <p style="font-size:28px; font-weight:700; line-height:1; font-variant-numeric:tabular-nums;
+        <p style="font-size:36px; font-family:'Poppins',sans-serif; font-weight:800; line-height:1; font-variant-numeric:tabular-nums;
             color:{% if max_score >= 80 %}var(--red){% elif max_score >= 50 %}var(--orange){% else %}var(--green){% endif %};">
           {{ max_score }}
           <span style="font-size:12px; font-weight:400; color:var(--text-2);"> / 100</span>
@@ -174,7 +174,7 @@
 </div>
 
 {# ── Charts Row ── #}
-<div class="grid-2" style="margin-bottom:16px;">
+<div class="g2" style="margin-bottom:16px;">
 
   {# Tren Mingguan #}
   <div class="chart-wrap">
@@ -236,7 +236,7 @@
     <a href="/ips" class="btn btn-outline btn-sm">Lihat Semua →</a>
   </div>
   <div style="overflow-x:auto;">
-    <table class="data-table">
+    <table class="dt">
       <thead>
         <tr>
           <th style="width:32px;">#</th>

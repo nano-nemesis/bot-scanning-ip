@@ -2,149 +2,160 @@
 {% block title %}{{ ip_address }} — AS{{ as_number }}{% endblock %}
 
 {% block content %}
+<div style="padding:24px 32px; max-width:1100px;">
 
-{# Breadcrumb #}
-<div class="text-sm breadcrumbs mb-4">
-  <ul>
-    <li><a href="/ips">IP List</a></li>
-    <li class="font-mono">{{ ip_address }}</li>
-  </ul>
-</div>
+  <div class="crumb">
+    <a href="/ips">IP List</a>
+    <span class="crumb-sep">›</span>
+    <span class="mono" style="color:var(--t1);">{{ ip_address }}</span>
+  </div>
 
-{% if not ip %}
-<div class="alert alert-warning">
-  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-  </svg>
-  IP <code>{{ ip_address }}</code> tidak ditemukan di database.
-</div>
-{% else %}
-
-{# ── Hero card ── #}
-{% set score = ip.abuse_score or 0 %}
-<div class="card bg-base-200 border border-base-300 mb-4">
-  <div class="card-body p-5">
-    <div class="flex flex-wrap items-start justify-between gap-4">
-      <div>
-        <h1 class="text-3xl font-mono font-bold">{{ ip.ip_address }}</h1>
-        <p class="text-sm text-base-content/50 mt-1">Negara: {{ ip.country_code or "—" }} &middot; Prefix: {{ ip.prefix or "—" }}</p>
+  {% if not ip %}
+  <div class="card" style="padding:24px; border-color:var(--orange); display:flex; align-items:center; gap:14px; color:var(--orange);">
+    <svg style="width:22px;height:22px;flex-shrink:0;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+    </svg>
+    <div>
+      <div style="font-weight:600; color:var(--t1); margin-bottom:2px;">IP tidak ditemukan</div>
+      <div style="font-size:12px; color:var(--t2);">
+        <code class="mono" style="color:var(--orange);">{{ ip_address }}</code> belum pernah di-scan.
+        Gunakan <code class="mono" style="color:var(--blue);">/soloscan {{ ip_address }}</code> di Telegram.
       </div>
-      <div class="text-right">
-        <div class="text-5xl font-bold
-          {% if score >= 80 %}text-error{% elif score >= 50 %}text-warning{% else %}text-success{% endif %}">
-          {{ score }}
+    </div>
+  </div>
+
+  {% else %}
+  {% set s = ip.abuse_score or 0 %}
+
+  {# ── Hero ── #}
+  <div class="card" style="padding:24px 28px; margin-bottom:16px;">
+    <div style="display:flex; flex-wrap:wrap; align-items:flex-start; justify-content:space-between; gap:16px;">
+      <div>
+        <div class="mono" style="font-size:26px; font-weight:400; color:var(--t1); letter-spacing:-.5px;">{{ ip.ip_address }}</div>
+        <div style="display:flex; align-items:center; gap:10px; margin-top:8px; flex-wrap:wrap;">
+          <span style="font-size:12px; color:var(--t2);">{{ ip.country_code | country_flag }} {{ ip.country_code or "—" }}</span>
+          <span style="color:var(--border);">·</span>
+          <span class="mono" style="font-size:12px; color:var(--t2);">{{ ip.prefix or "—" }}</span>
+          <span style="color:var(--border);">·</span>
+          <span style="font-size:12px; color:var(--t2);">{{ ip.last_reported[:10] if ip.last_reported else "tidak ada laporan terbaru" }}</span>
         </div>
-        <div class="text-sm text-base-content/50">AbuseIPDB Score</div>
-        <div class="mt-1">
-          {% if score >= 80 %}
-            <span class="badge badge-error">🚫 BLOCK</span>
-          {% elif score >= 50 %}
-            <span class="badge badge-warning">⚠ MONITOR</span>
+      </div>
+
+      <div style="text-align:right;">
+        <div class="title" style="font-size:48px; line-height:1;
+          color:{% if s >= 80 %}var(--red){% elif s >= 50 %}var(--orange){% else %}var(--green){% endif %};">
+          {{ s }}
+        </div>
+        <div style="font-size:11px; color:var(--t2); margin-top:2px;">AbuseIPDB Score / 100</div>
+        <div style="margin-top:8px;">
+          {% if s >= 80 %}
+            <span class="pill pill-block {% if s >= 90 %}pulse-red{% endif %}">
+              <span class="pill-dot" style="background:var(--red);"></span> BLOCK
+            </span>
+          {% elif s >= 50 %}
+            <span class="pill pill-monitor"><span class="pill-dot" style="background:var(--orange);"></span> MONITOR</span>
           {% else %}
-            <span class="badge badge-success">✓ OK</span>
+            <span class="pill pill-ok"><span class="pill-dot" style="background:var(--green);"></span> OK</span>
           {% endif %}
         </div>
       </div>
     </div>
   </div>
-</div>
 
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
 
-  {# Detail card #}
-  <div class="card bg-base-200 border border-base-300">
-    <div class="card-body p-4">
-      <h2 class="card-title text-sm mb-3">Detail</h2>
-      <table class="table table-xs">
+    {# ── Detail table ── #}
+    <div class="card">
+      <div class="card-header">
+        <span class="section-title" style="font-size:13px;">Detail</span>
+      </div>
+      <table class="dt">
         <tbody>
-          <tr><th class="text-base-content/50 w-40">Jumlah Laporan</th><td>{{ ip.num_reports or 0 }}</td></tr>
-          <tr><th class="text-base-content/50">Terakhir Dilaporkan</th><td class="font-mono text-xs">{{ ip.last_reported[:10] if ip.last_reported else "—" }}</td></tr>
-          <tr><th class="text-base-content/50">Negara</th><td>{{ ip.country_code or "—" }}</td></tr>
-          <tr><th class="text-base-content/50">Prefix</th><td class="font-mono text-xs">{{ ip.prefix or "—" }}</td></tr>
-          <tr><th class="text-base-content/50">VoidIP Score</th><td>{{ ip.voidip_score or 0 }}</td></tr>
+          <tr><td style="color:var(--t2); width:140px; font-size:12px;">Jumlah Laporan</td><td>{{ ip.num_reports or 0 }}</td></tr>
+          <tr><td style="color:var(--t2); font-size:12px;">Terakhir Dilaporkan</td><td class="mono" style="font-size:12px;">{{ ip.last_reported[:10] if ip.last_reported else "—" }}</td></tr>
+          <tr><td style="color:var(--t2); font-size:12px;">Negara</td><td>{{ ip.country_code | country_flag }} {{ ip.country_code or "—" }}</td></tr>
+          <tr><td style="color:var(--t2); font-size:12px;">Prefix</td><td class="mono" style="font-size:12px;">{{ ip.prefix or "—" }}</td></tr>
+          <tr><td style="color:var(--t2); font-size:12px;">VoidIP Score</td><td>{{ ip.voidip_score or 0 }}</td></tr>
           <tr>
-            <th class="text-base-content/50">VoidIP Tags</th>
+            <td style="color:var(--t2); font-size:12px;">VoidIP Tags</td>
             <td>
-              {% set vtags = ip.voidip_tags %}
-              {% if vtags and vtags != '[]' %}
-                {% for tag in vtags | replace('[','') | replace(']','') | replace('"','') | split(',') %}
-                  <span class="badge badge-outline badge-xs mr-1">{{ tag.strip() }}</span>
-                {% endfor %}
+              {% set vtags = ip.voidip_tags | parse_json %}
+              {% if vtags %}
+                {% for tag in vtags %}<span class="b-blue" style="margin-right:4px; margin-bottom:4px;">{{ tag }}</span>{% endfor %}
               {% else %}—{% endif %}
             </td>
           </tr>
         </tbody>
       </table>
     </div>
-  </div>
 
-  {# Categories + External links #}
-  <div class="flex flex-col gap-4">
-    <div class="card bg-base-200 border border-base-300 flex-1">
-      <div class="card-body p-4">
-        <h2 class="card-title text-sm mb-3">Kategori Laporan</h2>
-        {% set cats_raw = ip.categories %}
-        {% if cats_raw and cats_raw != '[]' %}
-          <div class="flex flex-wrap gap-1">
-            {% for cat in cats_raw | replace('[','') | replace(']','') | split(',') %}
-              {% set c = cat.strip() %}
-              {% if c %}
-              <span class="badge badge-primary badge-sm">{{ c }}</span>
-              {% endif %}
-            {% endfor %}
-          </div>
-        {% else %}
-          <p class="text-sm text-base-content/40">Tidak ada data kategori</p>
-        {% endif %}
+    {# ── Categories + Links ── #}
+    <div style="display:flex; flex-direction:column; gap:16px;">
+      <div class="card" style="flex:1;">
+        <div class="card-header">
+          <span class="section-title" style="font-size:13px;">Kategori Laporan</span>
+        </div>
+        <div style="padding:14px 18px;">
+          {% set cats = ip.categories | parse_json %}
+          {% if cats %}
+            <div style="display:flex; flex-wrap:wrap; gap:6px;">
+              {% for cat in cats %}<span class="b-blue">{{ cat }}</span>{% endfor %}
+            </div>
+          {% else %}
+            <p style="font-size:13px; color:var(--t2);">Tidak ada data kategori</p>
+          {% endif %}
+        </div>
       </div>
-    </div>
 
-    <div class="card bg-base-200 border border-base-300">
-      <div class="card-body p-4">
-        <h2 class="card-title text-sm mb-3">Referensi Eksternal</h2>
-        <div class="flex flex-col gap-2">
-          <a href="https://www.abuseipdb.com/check/{{ ip.ip_address }}" target="_blank"
-             class="btn btn-outline btn-xs w-fit">
+      <div class="card">
+        <div class="card-header">
+          <span class="section-title" style="font-size:13px;">Referensi Eksternal</span>
+        </div>
+        <div style="padding:14px 18px; display:flex; flex-direction:column; gap:8px;">
+          <a href="https://www.abuseipdb.com/check/{{ ip.ip_address }}" target="_blank" rel="noopener" class="btn btn-outline btn-sm" style="width:fit-content;">
             🔗 AbuseIPDB →
           </a>
-          <a href="https://stat.ripe.net/app/launchpad/{{ ip.ip_address }}" target="_blank"
-             class="btn btn-outline btn-xs w-fit">
+          <a href="https://stat.ripe.net/app/launchpad/{{ ip.ip_address }}" target="_blank" rel="noopener" class="btn btn-outline btn-sm" style="width:fit-content;">
             🔗 RIPE Stat →
           </a>
         </div>
       </div>
     </div>
   </div>
-</div>
 
-{# Session history #}
-{% if history %}
-<div class="card bg-base-200 border border-base-300">
-  <div class="card-body p-4">
-    <h2 class="card-title text-sm mb-3">Riwayat di Semua Sesi ({{ history|length }})</h2>
-    <div class="overflow-x-auto">
-      <table class="table table-xs table-zebra">
-        <thead><tr><th>Sesi</th><th>Tipe</th><th>Tanggal Scan</th><th>Score</th><th>Reports</th></tr></thead>
+  {# ── History ── #}
+  {% if history %}
+  <div class="card">
+    <div class="card-header">
+      <span class="section-title" style="font-size:13px;">Riwayat di Semua Sesi</span>
+      <span style="font-size:12px; color:var(--t2);">{{ history|length }} kemunculan</span>
+    </div>
+    <div style="overflow-x:auto;">
+      <table class="dt">
+        <thead>
+          <tr><th>Sesi</th><th>Tipe</th><th>Tanggal Scan (WIB)</th><th>Score</th><th>Reports</th></tr>
+        </thead>
         <tbody>
           {% for h in history %}
-          <tr class="hover">
-            <td><a href="/sessions/{{ h.session_id }}" class="link link-hover">#{{ h.session_id }}</a></td>
-            <td><span class="badge badge-outline badge-xs">{{ h.session_type or "full" }}</span></td>
-            <td class="font-mono text-xs">{{ h.session_started[:10] if h.session_started else "—" }}</td>
+          {% set hs = h.abuse_score %}
+          <tr>
+            <td><a href="/sessions/{{ h.session_id }}" style="color:var(--blue); text-decoration:none; font-weight:600;">#{{ h.session_id }}</a></td>
+            <td><span class="tag tag-type">{{ h.session_type or "full" }}</span></td>
+            <td class="mono" style="font-size:12px; color:var(--t2);">{{ h.session_started | to_wib }}</td>
             <td>
-              {% if h.abuse_score >= 80 %}<span class="badge badge-error badge-xs">{{ h.abuse_score }}</span>
-              {% elif h.abuse_score >= 50 %}<span class="badge badge-warning badge-xs">{{ h.abuse_score }}</span>
-              {% else %}<span class="badge badge-success badge-xs">{{ h.abuse_score }}</span>{% endif %}
+              {% if hs >= 80 %}<span class="b-red">{{ hs }}</span>
+              {% elif hs >= 20 %}<span class="b-orange">{{ hs }}</span>
+              {% else %}<span class="b-green">{{ hs }}</span>{% endif %}
             </td>
-            <td class="text-xs">{{ h.num_reports }}</td>
+            <td style="color:var(--t2);">{{ h.num_reports }}</td>
           </tr>
           {% endfor %}
         </tbody>
       </table>
     </div>
   </div>
-</div>
-{% endif %}
+  {% endif %}
 
-{% endif %}
+  {% endif %}
+</div>
 {% endblock %}

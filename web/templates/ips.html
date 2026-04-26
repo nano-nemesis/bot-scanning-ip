@@ -2,9 +2,9 @@
 {% block title %}IP List — AS{{ as_number }}{% endblock %}
 
 {% block content %}
-<div style="padding:20px 24px;">
+<div style="padding:28px 36px;">
   <div style="margin-bottom:18px;">
-    <h1 style="font-size:21px; font-weight:700; color:var(--text-1);">IP List</h1>
+    <h1 style="font-size:24px; font-family:'Poppins',sans-serif; font-weight:800; color:var(--text-1);">IP List</h1>
     <p style="font-size:13px; color:var(--text-2); margin-top:3px;">
       Sesi #{{ session_id or "—" }} &middot; <strong style="color:var(--text-1);">{{ "{:,}".format(total) }}</strong> IP ditemukan
     </p>
@@ -24,24 +24,24 @@
 
       <div style="display:flex; flex-direction:column; gap:4px;">
         <label style="font-size:11px; color:var(--text-2);">Cari IP</label>
-        <input type="text" name="search_ip" value="{{ search_ip }}" placeholder="1.2.3.4" class="f-input" style="width:140px;"
+        <input type="text" name="search_ip" value="{{ search_ip }}" placeholder="1.2.3.4" class="fi" style="width:140px;"
                hx-trigger="input delay:400ms" hx-include="#filter-form">
       </div>
       <div style="display:flex; flex-direction:column; gap:4px;">
         <label style="font-size:11px; color:var(--text-2);">Min Score</label>
-        <input type="number" name="min_score" value="{{ min_score or '' }}" placeholder="0" min="0" max="100" class="f-input" style="width:80px;">
+        <input type="number" name="min_score" value="{{ min_score or '' }}" placeholder="0" min="0" max="100" class="fi" style="width:80px;">
       </div>
       <div style="display:flex; flex-direction:column; gap:4px;">
         <label style="font-size:11px; color:var(--text-2);">Max Score</label>
-        <input type="number" name="max_score" value="{{ max_score or '' }}" placeholder="100" min="0" max="100" class="f-input" style="width:80px;">
+        <input type="number" name="max_score" value="{{ max_score or '' }}" placeholder="100" min="0" max="100" class="fi" style="width:80px;">
       </div>
       <div style="display:flex; flex-direction:column; gap:4px;">
         <label style="font-size:11px; color:var(--text-2);">Negara</label>
-        <input type="text" name="country" value="{{ country }}" placeholder="ID" maxlength="2" class="f-input" style="width:64px; text-transform:uppercase;">
+        <input type="text" name="country" value="{{ country }}" placeholder="ID" maxlength="2" class="fi" style="width:64px; text-transform:uppercase;">
       </div>
       <div style="display:flex; flex-direction:column; gap:4px;">
         <label style="font-size:11px; color:var(--text-2);">Urutkan</label>
-        <select name="sort_by" class="f-input" style="width:120px;">
+        <select name="sort_by" class="fi" style="width:120px;">
           {% for val, lbl in [("abuse_score","Score"),("num_reports","Reports"),("ip_address","IP"),("country_code","Negara"),("scanned_at","Tanggal")] %}
           <option value="{{ val }}" {% if sort_by == val %}selected{% endif %}>{{ lbl }}</option>
           {% endfor %}
@@ -49,14 +49,14 @@
       </div>
       <div style="display:flex; flex-direction:column; gap:4px;">
         <label style="font-size:11px; color:var(--text-2);">Arah</label>
-        <select name="sort_dir" class="f-input" style="width:88px;">
+        <select name="sort_dir" class="fi" style="width:88px;">
           <option value="DESC" {% if sort_dir=="DESC" %}selected{% endif %}>↓ DESC</option>
           <option value="ASC"  {% if sort_dir=="ASC"  %}selected{% endif %}>↑ ASC</option>
         </select>
       </div>
       <div style="display:flex; flex-direction:column; gap:4px;">
         <label style="font-size:11px; color:var(--text-2);">/halaman</label>
-        <select name="per_page" class="f-input" style="width:72px;">
+        <select name="per_page" class="fi" style="width:72px;">
           {% for opt in per_page_options %}
           <option value="{{ opt }}" {% if per_page==opt %}selected{% endif %}>{{ opt }}</option>
           {% endfor %}
@@ -73,7 +73,7 @@
   {# ── Table ── #}
   <div class="card">
     <div style="overflow-x:auto;">
-      <table class="data-table">
+      <table class="dt">
         <thead>
           <tr>
             <th>IP Address</th>

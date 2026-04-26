@@ -41,8 +41,10 @@ def _register_filters(templates: Jinja2Templates) -> None:
         except Exception:
             return code
 
+    import json as _json
     templates.env.filters["to_wib"] = to_wib
     templates.env.filters["country_flag"] = country_flag
+    templates.env.filters["parse_json"] = lambda s: _json.loads(s) if s else []
 
 
 @asynccontextmanager
