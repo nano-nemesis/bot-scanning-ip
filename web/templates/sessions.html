@@ -2,7 +2,7 @@
 {% block title %}Scan Sessions — AS{{ as_number }}{% endblock %}
 
 {% block content %}
-<div style="padding:28px 36px;">
+<div class="page-pad" style="padding:28px 36px;">
 
   {# ── Header ── #}
   <div class="fade-in" style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
@@ -38,12 +38,12 @@
       <table class="dt">
         <thead>
           <tr>
-            <th style="width:40px;">#</th>
-            <th>Tipe</th>
+            <th class="hide-mobile" style="width:40px;">#</th>
+            <th class="hide-tablet">Tipe</th>
             <th>Status</th>
             <th>Mulai (WIB)</th>
-            <th>Selesai (WIB)</th>
-            <th style="text-align:right;">Prefix</th>
+            <th class="hide-mobile">Selesai (WIB)</th>
+            <th class="hide-tablet" style="text-align:right;">Prefix</th>
             <th style="text-align:right;">Total IP</th>
             <th style="text-align:right;"></th>
           </tr>
@@ -51,8 +51,8 @@
         <tbody>
           {% for s in sessions %}
           <tr class="session-row" style="position:relative;">
-            <td class="mono" style="color:var(--text-2); font-size:12px;">#{{ s.id }}</td>
-            <td>
+            <td class="mono hide-mobile" style="color:var(--text-2); font-size:12px;">#{{ s.id }}</td>
+            <td class="hide-tablet">
               {% if s.session_type == 'solo' %}
                 <span class="tag tag-type">🔎 solo</span>
               {% else %}
@@ -74,8 +74,8 @@
               <div class="mono" style="font-size:12px; color:var(--text-1);">{{ s.started_at | to_wib }}</div>
               <div class="rel-time" style="font-size:10px; color:var(--text-3); margin-top:1px;" data-ts="{{ s.started_at }}"></div>
             </td>
-            <td class="mono" style="font-size:12px; color:var(--text-2);">{{ s.finished_at | to_wib if s.finished_at else "—" }}</td>
-            <td style="text-align:right; color:var(--text-2); font-size:13px;">{{ s.total_prefixes or 0 }}</td>
+            <td class="mono hide-mobile" style="font-size:12px; color:var(--text-2);">{{ s.finished_at | to_wib if s.finished_at else "—" }}</td>
+            <td class="hide-tablet" style="text-align:right; color:var(--text-2); font-size:13px;">{{ s.total_prefixes or 0 }}</td>
             <td style="text-align:right; font-size:13px; font-family:'JetBrains Mono',monospace;">{{ "{:,}".format(s.total_ips or 0) }}</td>
             <td style="text-align:right;">
               <a href="/sessions/{{ s.id }}" class="btn btn-outline btn-sm" style="white-space:nowrap;">Detail →</a>

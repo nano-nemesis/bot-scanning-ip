@@ -28,11 +28,15 @@
   .threat-dot { position: absolute; top: -4px; width: 10px; height: 10px; border-radius: 50%; background: var(--text-1); border: 2px solid var(--bg-card); transform: translateX(-50%); box-shadow: 0 0 6px rgba(0,0,0,.5); transition: left .4s; }
   .live-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); box-shadow: 0 0 8px var(--green); flex-shrink: 0; animation: livePulse 2s ease-in-out infinite; }
   @keyframes livePulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.6;transform:scale(.85)} }
+  @media (max-width: 600px) {
+    .chart-canvas-wrap { height: 180px !important; }
+    .dash-header-right { display: none !important; }
+  }
 </style>
 {% endblock %}
 
 {% block content %}
-<div style="padding:28px 36px; max-width:1440px;">
+<div class="page-pad" style="padding:28px 36px; max-width:1440px;">
 
 {# ── Header ── #}
 <div class="fade-in" style="display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:22px;">
@@ -41,7 +45,7 @@
     <p style="font-size:13px; color:var(--text-2);">Monitoring AS{{ as_number }} — {{ node_location }}</p>
   </div>
   {% if session %}
-  <div style="display:flex; flex-direction:column; align-items:flex-end; gap:5px;">
+  <div class="dash-header-right" style="display:flex; flex-direction:column; align-items:flex-end; gap:5px;">
     <div style="display:inline-flex; align-items:center; gap:8px; background:var(--bg-sidebar); border:1px solid var(--border); border-radius:8px; padding:7px 14px;">
       <span class="live-dot"></span>
       <span style="font-size:12px; color:var(--text-1); font-weight:500;">{{ node_name }}</span>
@@ -182,7 +186,7 @@
     <div style="padding:16px 18px;">
       {% set has_weekly = weekly_labels_json != '[]' %}
       {% if has_weekly %}
-      <div style="height:210px; position:relative;">
+      <div class="chart-canvas-wrap" style="height:210px; position:relative;">
         <canvas id="weeklyChart"></canvas>
       </div>
       {% else %}
@@ -205,7 +209,7 @@
     <div style="padding:16px 18px;">
       {% set has_cats = cat_counts_json != '[]' and cat_counts_json != '[0]' %}
       {% if has_cats %}
-      <div style="height:210px; position:relative;">
+      <div class="chart-canvas-wrap" style="height:210px; position:relative;">
         <canvas id="categoryChart"></canvas>
       </div>
       {% else %}
@@ -237,8 +241,8 @@
           <th style="width:32px;">#</th>
           <th>IP Address</th>
           <th>Score</th>
-          <th>Reports</th>
-          <th>Negara</th>
+          <th class="hide-mobile">Reports</th>
+          <th class="hide-mobile">Negara</th>
           <th>Status</th>
         </tr>
       </thead>
@@ -257,13 +261,13 @@
               {% if s >= 80 %}<span class="badge-red">{{ s }}</span>
               {% elif s >= 20 %}<span class="badge-orange">{{ s }}</span>
               {% else %}<span class="badge-green">{{ s }}</span>{% endif %}
-              <div class="score-bar-bg">
+              <div class="score-bar-bg hide-mobile">
                 <div class="score-bar-fill" style="width:{{ s }}%; background:{% if s >= 80 %}var(--red){% elif s >= 20 %}var(--orange){% else %}var(--green){% endif %};"></div>
               </div>
             </div>
           </td>
-          <td style="color:var(--text-2);">{{ ip.num_reports }}</td>
-          <td>
+          <td class="hide-mobile" style="color:var(--text-2);">{{ ip.num_reports }}</td>
+          <td class="hide-mobile">
             <span title="{{ ip.country_code or '' }}">{{ ip.country_code | country_flag }}</span>
             <span style="font-size:12px; color:var(--text-2); margin-left:4px;">{{ ip.country_code or "—" }}</span>
           </td>

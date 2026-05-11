@@ -2,10 +2,13 @@
 {% block title %}Session #{{ session.id }} — AS{{ as_number }}{% endblock %}
 {% block head %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+<style>
+  @media (max-width: 600px) { .chart-canvas-wrap { height: 180px !important; } }
+</style>
 {% endblock %}
 
 {% block content %}
-<div style="padding:28px 36px; max-width:1300px;">
+<div class="page-pad" style="padding:28px 36px; max-width:1300px;">
 
   {# Breadcrumb #}
   <div class="crumb fade-in">
@@ -105,12 +108,12 @@
       <table class="dt">
         <thead>
           <tr>
-            <th style="width:32px;">#</th>
+            <th class="hide-mobile" style="width:32px;">#</th>
             <th>IP Address</th>
             <th>Score</th>
-            <th>Reports</th>
-            <th>Negara</th>
-            <th>Prefix</th>
+            <th class="hide-mobile">Reports</th>
+            <th class="hide-mobile">Negara</th>
+            <th class="hide-tablet">Prefix</th>
             <th>Status</th>
           </tr>
         </thead>
@@ -118,24 +121,24 @@
           {% for ip in offenders %}
           {% set s = ip.abuse_score %}
           <tr>
-            <td style="color:var(--text-2); font-size:12px;">{{ loop.index }}</td>
+            <td class="hide-mobile" style="color:var(--text-2); font-size:12px;">{{ loop.index }}</td>
             <td><a href="/ips/{{ ip.ip_address }}" class="mono" style="color:var(--blue); text-decoration:none; font-size:13px;">{{ ip.ip_address }}</a></td>
             <td>
               <div style="display:inline-flex; align-items:center; gap:7px;">
                 {% if s >= 80 %}<span class="badge-red">{{ s }}</span>
                 {% elif s >= 20 %}<span class="badge-orange">{{ s }}</span>
                 {% else %}<span class="badge-green">{{ s }}</span>{% endif %}
-                <div class="sbar-bg">
+                <div class="sbar-bg hide-mobile">
                   <div class="sbar-fill" style="width:{{ s }}%; background:{% if s >= 80 %}var(--red){% elif s >= 20 %}var(--orange){% else %}var(--green){% endif %};"></div>
                 </div>
               </div>
             </td>
-            <td style="color:var(--text-2);">{{ ip.num_reports }}</td>
-            <td>
+            <td class="hide-mobile" style="color:var(--text-2);">{{ ip.num_reports }}</td>
+            <td class="hide-mobile">
               <span title="{{ ip.country_code or '' }}">{{ ip.country_code | country_flag }}</span>
               <span style="font-size:12px; color:var(--text-2); margin-left:3px;">{{ ip.country_code or "—" }}</span>
             </td>
-            <td class="mono" style="font-size:12px; color:var(--text-2);">{{ ip.prefix or "—" }}</td>
+            <td class="mono hide-tablet" style="font-size:12px; color:var(--text-2);">{{ ip.prefix or "—" }}</td>
             <td>
               {% if s >= 80 %}<span class="pill pill-block {% if s >= 90 %}pulse-red{% endif %}"><span class="pill-dot" style="background:var(--red);"></span>BLOCK</span>
               {% elif s >= 50 %}<span class="pill pill-monitor"><span class="pill-dot" style="background:var(--orange);"></span>MONITOR</span>
@@ -160,7 +163,7 @@
     <div style="padding:20px 22px;">
       <h2 class="section-title" style="font-size:13px; margin-bottom:16px; color:var(--text-1);">Distribusi Kategori</h2>
       {% if cat_labels_json != '[]' %}
-      <div style="height:240px; position:relative;">
+      <div class="chart-canvas-wrap" style="height:240px; position:relative;">
         <canvas id="catChart"></canvas>
       </div>
       {% else %}

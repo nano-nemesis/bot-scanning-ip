@@ -145,6 +145,7 @@
       transition: background .13s, color .13s, border-color .13s;
       border-left: 3px solid transparent;
       position: relative;
+      min-height: 44px;
     }
     .nav-link svg { width: 17px; height: 17px; flex-shrink: 0; }
     .nav-link:hover { color: var(--text-1); background: rgba(128,128,128,.09); }
@@ -267,7 +268,10 @@
     .grid-4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; }
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
     @media (max-width: 860px) { .g4, .grid-4 { grid-template-columns: 1fr 1fr; gap: 12px; } }
-    @media (max-width: 600px) { .g2, .grid-2 { grid-template-columns: 1fr; } .g4, .grid-4 { gap: 10px; } }
+    @media (max-width: 600px) {
+      .g4, .grid-4 { grid-template-columns: 1fr; gap: 10px; }
+      .g2, .grid-2 { grid-template-columns: 1fr; }
+    }
 
     /* ── Misc ── */
     .htmx-indicator { display: none; }
@@ -290,6 +294,16 @@
     .fade-in-1 { animation: fadeInUp .3s .05s ease both; }
     .fade-in-2 { animation: fadeInUp .3s .1s ease both; }
     .fade-in-3 { animation: fadeInUp .3s .15s ease both; }
+
+    /* ── Responsive utilities ── */
+    @media (max-width: 860px) {
+      .hide-tablet { display: none !important; }
+    }
+    @media (max-width: 600px) {
+      .hide-mobile { display: none !important; }
+      .page-pad { padding: 14px !important; }
+      .mob-stack { flex-direction: column !important; }
+    }
   </style>
 
   {% block head %}{% endblock %}
