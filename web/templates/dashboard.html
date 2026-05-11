@@ -10,7 +10,7 @@
     padding: 22px 24px;
     position: relative;
     overflow: hidden;
-    transition: border-color .2s, transform .15s, background .2s;
+    transition: border-color .2s, transform .15s, box-shadow .15s;
   }
   .stat-card:hover { border-color: var(--border-2); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,.15); }
   .stat-accent { position: absolute; bottom: 0; left: 0; right: 0; height: 3px; }
@@ -20,16 +20,14 @@
   .section-title { font-size: 14px; font-weight: 800; color: var(--text-1); font-family: 'Poppins', sans-serif; }
   .section-sub   { font-size: 11px; color: var(--text-2); margin-top: 2px; }
   .chart-wrap    { background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; transition: background .2s; }
-  .score-bar-bg  { width: 56px; height: 5px; background: var(--bg-hover); border-radius: 3px; overflow: hidden; }
-  .score-bar-fill { height: 100%; border-radius: 3px; }
   .rank-n { width: 20px; height: 20px; border-radius: 5px; display: inline-flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; background: var(--bg-hover); color: var(--text-2); flex-shrink: 0; }
   .rank-1 { background: rgba(210,153,34,.15); color: #d29922; }
   .rank-2 { background: rgba(139,148,158,.1);  color: #8b949e; }
   .rank-3 { background: rgba(184,115,51,.12);  color: #b87333; }
   .threat-bar { height: 4px; border-radius: 3px; background: linear-gradient(90deg,var(--green) 0%,var(--yellow) 50%,var(--red) 100%); position: relative; margin-top: 10px; }
   .threat-dot { position: absolute; top: -4px; width: 10px; height: 10px; border-radius: 50%; background: var(--text-1); border: 2px solid var(--bg-card); transform: translateX(-50%); box-shadow: 0 0 6px rgba(0,0,0,.5); transition: left .4s; }
-  @keyframes pulse-red { 0%,100%{opacity:1} 50%{opacity:.4} }
-  .pulse-red { animation: pulse-red 2s ease-in-out infinite; }
+  .live-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); box-shadow: 0 0 8px var(--green); flex-shrink: 0; animation: livePulse 2s ease-in-out infinite; }
+  @keyframes livePulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.6;transform:scale(.85)} }
 </style>
 {% endblock %}
 
@@ -37,39 +35,34 @@
 <div style="padding:28px 36px; max-width:1440px;">
 
 {# ── Header ── #}
-<div style="display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:22px;">
+<div class="fade-in" style="display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:22px;">
   <div>
     <h1 class="page-title" style="font-size:26px; color:var(--text-1); margin-bottom:4px;">Dashboard</h1>
-    <p style="font-size:13px; color:var(--text-2);">Monitoring AS{{ as_number }}</p>
+    <p style="font-size:13px; color:var(--text-2);">Monitoring AS{{ as_number }} — {{ node_location }}</p>
   </div>
   {% if session %}
   <div style="display:flex; flex-direction:column; align-items:flex-end; gap:5px;">
-    <div style="display:inline-flex; align-items:center; gap:8px; background:var(--bg-sidebar); border:1px solid var(--border); border-radius:8px; padding:6px 12px;">
-      <span style="width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);flex-shrink:0;"></span>
-      <span style="font-size:12px; color:var(--text-1); font-weight:500;">Scan Terbaru — {{ node_name }}</span>
+    <div style="display:inline-flex; align-items:center; gap:8px; background:var(--bg-sidebar); border:1px solid var(--border); border-radius:8px; padding:7px 14px;">
+      <span class="live-dot"></span>
+      <span style="font-size:12px; color:var(--text-1); font-weight:500;">{{ node_name }}</span>
       <span style="color:var(--border);">|</span>
-      <span id="wib-clock" style="font-size:12px; color:var(--text-2); font-family:'JetBrains Mono',monospace;">{{ session.started_at | to_wib }}</span>
+      <span style="font-size:12px; color:var(--text-2); font-family:'JetBrains Mono',monospace;">Sesi #{{ session.id }}</span>
     </div>
-    <div style="display:inline-flex; align-items:center; gap:5px; font-size:11px; color:var(--text-2); padding:0 2px;">
-      <svg style="width:11px;height:11px;color:var(--blue);flex-shrink:0;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
-      </svg>
-      <span style="color:var(--blue);">{{ node_location }}</span>
-      <span style="color:var(--text-3);">· Session #{{ session.id }}</span>
+    <div style="font-size:11px; color:var(--text-2); padding:0 4px;">
+      Terakhir scan: {{ session.started_at | to_wib }}
     </div>
   </div>
   {% endif %}
 </div>
 
 {% if not session %}
-<div style="background:var(--bg-card); border:1px solid var(--orange); border-radius:10px; padding:20px 24px; display:flex; align-items:center; gap:14px; color:var(--orange);">
-  <svg style="width:22px;height:22px;flex-shrink:0;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+<div class="fade-in" style="background:var(--bg-card); border:1px solid var(--orange); border-radius:12px; padding:24px 28px; display:flex; align-items:center; gap:16px; color:var(--orange);">
+  <svg style="width:26px;height:26px;flex-shrink:0;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
   </svg>
   <div>
-    <div style="font-weight:600; color:var(--text-1); margin-bottom:2px;">Belum ada data scan</div>
-    <div style="font-size:12px; color:var(--text-2);">Gunakan <code style="background:rgba(210,153,34,.15); padding:1px 6px; border-radius:4px; color:var(--orange);">/scan</code> di Telegram untuk memulai scanning.</div>
+    <div style="font-weight:700; font-size:15px; color:var(--text-1); margin-bottom:4px;">Belum ada data scan</div>
+    <div style="font-size:13px; color:var(--text-2);">Gunakan <code style="background:rgba(210,153,34,.15); padding:2px 7px; border-radius:4px; color:var(--orange); font-family:'JetBrains Mono',monospace;">/scan</code> di Telegram untuk memulai scanning.</div>
   </div>
 </div>
 {% else %}
@@ -78,11 +71,13 @@
 <div class="g4" style="margin-bottom:16px;">
 
   {# Total IP #}
-  <div class="stat-card">
+  <div class="stat-card fade-in" style="animation-delay:0ms;">
     <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px;">
       <div>
         <p style="font-size:10px; color:var(--text-2); text-transform:uppercase; letter-spacing:.08em; margin-bottom:6px;">Total IP</p>
-        <p style="font-size:36px; font-family:'Poppins',sans-serif; font-weight:800; color:var(--text-1); line-height:1; font-variant-numeric:tabular-nums;">{{ "{:,}".format(total_ips) }}</p>
+        <p class="page-title" style="font-size:34px; color:var(--text-1); line-height:1; font-variant-numeric:tabular-nums;">
+          <span class="counter" data-target="{{ total_ips }}">{{ "{:,}".format(total_ips) }}</span>
+        </p>
       </div>
       <div class="stat-icon" style="background:rgba(248,81,73,.12);">
         <svg style="color:var(--red);" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h.5A2.5 2.5 0 0020 5.5v-1.565"/></svg>
@@ -100,11 +95,13 @@
   </div>
 
   {# IP Dilaporkan #}
-  <div class="stat-card">
+  <div class="stat-card fade-in-1">
     <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px;">
       <div>
         <p style="font-size:10px; color:var(--text-2); text-transform:uppercase; letter-spacing:.08em; margin-bottom:6px;">IP Dilaporkan</p>
-        <p style="font-size:36px; font-family:'Poppins',sans-serif; font-weight:800; color:var(--yellow); line-height:1; font-variant-numeric:tabular-nums;">{{ "{:,}".format(reported) }}</p>
+        <p class="page-title" style="font-size:34px; color:var(--yellow); line-height:1; font-variant-numeric:tabular-nums;">
+          <span class="counter" data-target="{{ reported }}">{{ "{:,}".format(reported) }}</span>
+        </p>
       </div>
       <div class="stat-icon" style="background:rgba(227,179,65,.12);">
         <svg style="color:var(--yellow);" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
@@ -122,11 +119,11 @@
   </div>
 
   {# Avg Score #}
-  <div class="stat-card">
+  <div class="stat-card fade-in-2">
     <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px;">
       <div>
         <p style="font-size:10px; color:var(--text-2); text-transform:uppercase; letter-spacing:.08em; margin-bottom:6px;">Avg Score</p>
-        <p style="font-size:36px; font-family:'Poppins',sans-serif; font-weight:800; color:var(--blue); line-height:1; font-variant-numeric:tabular-nums;">{{ "%.1f"|format(avg_score) }}</p>
+        <p class="page-title" style="font-size:34px; color:var(--blue); line-height:1; font-variant-numeric:tabular-nums;">{{ "%.1f"|format(avg_score) }}</p>
       </div>
       <div class="stat-icon" style="background:rgba(56,139,253,.12);">
         <svg style="color:var(--blue);" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
@@ -144,21 +141,19 @@
   </div>
 
   {# Max Score #}
-  <div class="stat-card">
+  <div class="stat-card fade-in-3">
     <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
       <div>
         <p style="font-size:10px; color:var(--text-2); text-transform:uppercase; letter-spacing:.08em; margin-bottom:6px;">Max Score</p>
-        <p style="font-size:36px; font-family:'Poppins',sans-serif; font-weight:800; line-height:1; font-variant-numeric:tabular-nums;
+        <p class="page-title" style="font-size:34px; line-height:1; font-variant-numeric:tabular-nums;
             color:{% if max_score >= 80 %}var(--red){% elif max_score >= 50 %}var(--orange){% else %}var(--green){% endif %};">
-          {{ max_score }}
-          <span style="font-size:12px; font-weight:400; color:var(--text-2);"> / 100</span>
+          {{ max_score }}<span style="font-size:13px; font-weight:400; color:var(--text-2);"> /100</span>
         </p>
       </div>
       <div class="stat-icon" style="background:rgba(210,153,34,.12);">
         <svg style="color:var(--orange);" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
       </div>
     </div>
-    {# Threat bar 0–100 #}
     <div class="threat-bar">
       <div class="threat-dot" style="left:{{ max_score }}%;"></div>
     </div>
@@ -174,7 +169,7 @@
 </div>
 
 {# ── Charts Row ── #}
-<div class="g2" style="margin-bottom:16px;">
+<div class="g2 fade-in" style="margin-bottom:16px; animation-delay:.1s;">
 
   {# Tren Mingguan #}
   <div class="chart-wrap">
@@ -187,7 +182,7 @@
     <div style="padding:16px 18px;">
       {% set has_weekly = weekly_labels_json != '[]' %}
       {% if has_weekly %}
-      <div style="height:190px; position:relative;">
+      <div style="height:210px; position:relative;">
         <canvas id="weeklyChart"></canvas>
       </div>
       {% else %}
@@ -210,7 +205,7 @@
     <div style="padding:16px 18px;">
       {% set has_cats = cat_counts_json != '[]' and cat_counts_json != '[0]' %}
       {% if has_cats %}
-      <div style="height:190px; position:relative;">
+      <div style="height:210px; position:relative;">
         <canvas id="categoryChart"></canvas>
       </div>
       {% else %}
@@ -227,7 +222,7 @@
 </div>
 
 {# ── Top Offenders Table ── #}
-<div class="card">
+<div class="card fade-in" style="animation-delay:.15s;">
   <div class="section-head">
     <div>
       <div class="section-title">Top {{ offenders|length }} IP Terburuk</div>
@@ -274,18 +269,23 @@
           </td>
           <td>
             {% if s >= 80 %}
-              <span class="pill-block {% if s >= 90 %}pulse-red{% endif %}">
-                <span style="width:5px;height:5px;border-radius:50%;background:var(--red);flex-shrink:0;"></span> BLOCK
+              <span class="pill pill-block {% if s >= 90 %}pulse-red{% endif %}">
+                <span class="pill-dot" style="background:var(--red);"></span> BLOCK
               </span>
             {% elif s >= 50 %}
-              <span class="pill-monitor"><span style="width:5px;height:5px;border-radius:50%;background:var(--orange);flex-shrink:0;"></span> MONITOR</span>
+              <span class="pill pill-monitor"><span class="pill-dot" style="background:var(--orange);"></span> MONITOR</span>
             {% else %}
-              <span class="pill-ok"><span style="width:5px;height:5px;border-radius:50%;background:var(--green);flex-shrink:0;"></span> OK</span>
+              <span class="pill pill-ok"><span class="pill-dot" style="background:var(--green);"></span> OK</span>
             {% endif %}
           </td>
         </tr>
         {% else %}
-        <tr><td colspan="6" class="empty-state">Tidak ada IP yang dilaporkan pada sesi ini.</td></tr>
+        <tr>
+          <td colspan="6" class="empty-state">
+            <div style="font-size:28px; margin-bottom:8px;">✅</div>
+            Tidak ada IP yang dilaporkan pada sesi ini.
+          </td>
+        </tr>
         {% endfor %}
       </tbody>
     </table>
@@ -328,7 +328,6 @@ function buildCharts(theme) {
     padding: 10,
   };
 
-  // Weekly chart
   const weeklyEl = document.getElementById('weeklyChart');
   if (weeklyEl) {
     if (weeklyChart) weeklyChart.destroy();
@@ -340,15 +339,24 @@ function buildCharts(theme) {
             type: 'bar', label: 'IP Dilaporkan',
             data: {{ weekly_reported_json|safe }},
             backgroundColor: 'rgba(227,179,65,0.55)',
-            borderColor: '#e3b341', borderWidth: 1, borderRadius: 3,
+            borderColor: '#e3b341', borderWidth: 1, borderRadius: 4,
             yAxisID: 'y',
           },
           {
             type: 'line', label: 'Avg Score',
             data: {{ weekly_avg_json|safe }},
-            borderColor: '#388bfd', backgroundColor: 'rgba(56,139,253,0.08)',
+            borderColor: '#388bfd',
+            backgroundColor: function(ctx) {
+              const chart = ctx.chart;
+              const {ctx: c2, chartArea} = chart;
+              if (!chartArea) return 'rgba(56,139,253,0.08)';
+              const gradient = c2.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+              gradient.addColorStop(0, 'rgba(56,139,253,0.18)');
+              gradient.addColorStop(1, 'rgba(56,139,253,0)');
+              return gradient;
+            },
             borderWidth: 2, pointRadius: 4, pointBackgroundColor: '#388bfd',
-            tension: 0.3, yAxisID: 'y1',
+            tension: 0.35, fill: true, yAxisID: 'y1',
           }
         ]
       },
@@ -364,7 +372,6 @@ function buildCharts(theme) {
     });
   }
 
-  // Donut chart
   const catEl = document.getElementById('categoryChart');
   if (catEl) {
     if (catChart) catChart.destroy();
@@ -375,13 +382,13 @@ function buildCharts(theme) {
         datasets: [{
           data: {{ cat_counts_json|safe }},
           backgroundColor: ['#388bfd','#d29922','#f85149','#e3b341','#3fb950','#a371f7','#8b949e'],
-          borderColor: c.tooltipBg, borderWidth: 2, hoverOffset: 5,
+          borderColor: c.tooltipBg, borderWidth: 2, hoverOffset: 6,
         }]
       },
       options: {
-        responsive: true, maintainAspectRatio: false, cutout: '62%',
+        responsive: true, maintainAspectRatio: false, cutout: '64%',
         plugins: {
-          legend: { position: 'right', labels: { font: { size: 11 }, boxWidth: 10, padding: 9, color: c.legend } },
+          legend: { position: 'right', labels: { font: { size: 11 }, boxWidth: 10, padding: 10, color: c.legend } },
           tooltip: { ...tooltipPlugin, callbacks: {
             label: ctx => {
               const total = ctx.dataset.data.reduce((a,b) => a+b, 0);
@@ -396,9 +403,26 @@ function buildCharts(theme) {
 }
 
 buildCharts(getTheme());
-
-// Re-render charts when theme toggles
 function onThemeChange(theme) { buildCharts(theme); }
+
+// Animated counters
+(function() {
+  function animateCounter(el) {
+    const target = parseInt(el.dataset.target, 10);
+    if (isNaN(target) || target === 0) return;
+    const duration = 700;
+    const start = performance.now();
+    function step(now) {
+      const t = Math.min((now - start) / duration, 1);
+      const ease = 1 - Math.pow(1 - t, 3);
+      const val = Math.round(ease * target);
+      el.textContent = val.toLocaleString();
+      if (t < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+  document.querySelectorAll('.counter').forEach(animateCounter);
+})();
 </script>
 {% endif %}
 {% endblock %}

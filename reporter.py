@@ -225,8 +225,8 @@ async def build_daily_report(session_id: int | None = None) -> list[str]:
     if session_id is None:
         session = await get_latest_session()
     else:
-        from db import get_any_session
-        session = await get_latest_session()
+        from db import get_session_by_id
+        session = await get_session_by_id(session_id)
 
     if not session:
         return ["⚠️ Belum ada data scan yang selesai. Gunakan /scan untuk memulai."]

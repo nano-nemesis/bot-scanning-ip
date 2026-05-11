@@ -22,6 +22,7 @@ logger = logging.getLogger(__name__)
 
 # Global state for approval flow
 _pending_scan: dict = {}   # keys: "message_id", "task"
+_pending_scan_lock = asyncio.Lock()
 
 
 async def run_scan(bot: Bot) -> None:
@@ -106,6 +107,16 @@ async def job_midnight_notify(bot: Bot) -> None:
     """Send approval notification at midnight WIB. Auto-scan after 30 minutes if no response."""
     global _pending_scan
 
+    async with _pending_scan_lock:
+        old_task = _pending_scan.get("task")
+        if old_task and not old_task.done():
+            old_task.cancel()
+            try:
+                await old_task
+            except asyncio.CancelledError:
+                pass
+        _pending_scan = {}
+
     token_ok = await validate_abuseipdb_token()
     token_status = "✅ Valid" if token_ok else "❌ Invalid"
 
@@ -130,10 +141,10 @@ async def job_midnight_notify(bot: Bot) -> None:
         reply_markup=keyboard,
     )
 
-    # Schedule auto-scan fallback after 30 minutes
     loop = asyncio.get_event_loop()
     task = loop.create_task(_auto_scan_fallback(bot, msg.message_id))
-    _pending_scan = {"message_id": msg.message_id, "task": task}
+    async with _pending_scan_lock:
+        _pending_scan = {"message_id": msg.message_id, "task": task}
 
 
 async def _auto_scan_fallback(bot: Bot, message_id: int) -> None:
@@ -141,10 +152,10 @@ async def _auto_scan_fallback(bot: Bot, message_id: int) -> None:
     await asyncio.sleep(30 * 60)
 
     global _pending_scan
-    if not _pending_scan:
-        return
-
-    _pending_scan = {}
+    async with _pending_scan_lock:
+        if not _pending_scan:
+            return
+        _pending_scan = {}
     logger.info("Auto-scan triggered after 30-minute timeout")
 
     try:
@@ -163,11 +174,16 @@ async def handle_approval(bot: Bot, callback_data: str, message_id: int) -> str:
     """Called by bot.py callback handler. Returns status string."""
     global _pending_scan
 
-    task = _pending_scan.get("task")
-    _pending_scan = {}
+    async with _pending_scan_lock:
+        task = _pending_scan.get("task")
+        _pending_scan = {}
 
     if task and not task.done():
         task.cancel()
+        try:
+            await task
+        except asyncio.CancelledError:
+            pass
 
     if callback_data == "approve_scan":
         asyncio.create_task(run_scan(bot))

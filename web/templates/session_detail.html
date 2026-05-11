@@ -8,72 +8,89 @@
 <div style="padding:28px 36px; max-width:1300px;">
 
   {# Breadcrumb #}
-  <div class="crumb">
+  <div class="crumb fade-in">
     <a href="/sessions">Sessions</a>
     <span class="crumb-sep">›</span>
     <span style="color:var(--text-1);">Session #{{ session.id }}</span>
   </div>
 
   {# ── Header ── #}
-  <div style="display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:20px;">
+  <div class="fade-in" style="display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:20px;">
     <div>
-      <h1 class="page-title" style="font-size:20px; font-weight:700; color:var(--text-1); margin-bottom:6px;">
-        Session #{{ session.id }}
-      </h1>
-      <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px; flex-wrap:wrap;">
+        <h1 class="page-title" style="font-size:22px; color:var(--text-1);">Session #{{ session.id }}</h1>
         {% if session.status == 'done' %}
-          <span class="tag-done">✓ Selesai</span>
+          <span class="pill pill-ok"><span class="pill-dot" style="background:var(--green);"></span> Selesai</span>
         {% elif session.status == 'running' %}
-          <span class="tag-running">⟳ Berjalan</span>
+          <span class="pill" style="background:rgba(56,139,253,.1); color:var(--blue); border:1px solid rgba(56,139,253,.2);"><span class="pill-dot" style="background:var(--blue);"></span> Berjalan</span>
         {% else %}
-          <span class="tag-failed">✗ Gagal</span>
+          <span class="pill pill-block"><span class="pill-dot" style="background:var(--red);"></span> Gagal</span>
         {% endif %}
-        <span class="tag-type">{{ session.session_type or "full" }}</span>
-        <span style="font-size:12px; color:var(--text-2);">{{ session.started_at | to_wib }}</span>
+        <span class="tag tag-type">{{ session.session_type or "full" }}</span>
+      </div>
+      <div style="font-size:12px; color:var(--text-2);">
+        Dimulai: <span class="mono" style="color:var(--text-1);">{{ session.started_at | to_wib }}</span>
+        {% if session.finished_at %}
+        &nbsp;·&nbsp; Selesai: <span class="mono" style="color:var(--text-1);">{{ session.finished_at | to_wib }}</span>
+        {% endif %}
       </div>
     </div>
     <a href="/ips?session={{ session.id }}" class="btn btn-outline btn-sm">Lihat IP List →</a>
   </div>
+
+  {% if alerts %}
+  <div class="fade-in" style="background:rgba(248,81,73,.08); border:1px solid rgba(248,81,73,.25); border-radius:12px; padding:14px 18px; margin-bottom:16px; display:flex; align-items:center; gap:12px;">
+    <svg style="width:18px;height:18px;color:var(--red);flex-shrink:0;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+    </svg>
+    <div style="font-size:13px; color:var(--red); font-weight:600;">
+      {{ alerts|length }} IP dengan score ≥ {{ alert_threshold }} ditemukan di sesi ini
+    </div>
+    <button onclick="showTab('alerts')" class="btn btn-sm" style="margin-left:auto; background:rgba(248,81,73,.15); color:var(--red); border:1px solid rgba(248,81,73,.3);">
+      Lihat Alert →
+    </button>
+  </div>
+  {% endif %}
 
   {# ── Stat Cards ── #}
   {% set total_ips = session.total_ips or 0 %}
   {% set reported  = summary.total_reported_ips or 0 %}
   {% set pct       = (reported / total_ips * 100) if total_ips > 0 else 0 %}
 
-  <div class="g4" style="margin-bottom:18px;">
+  <div class="g4 fade-in" style="margin-bottom:18px;">
     <div class="card" style="padding:16px 18px;">
-      <p style="font-size:10px; color:var(--text-2); text-transform:uppercase; letter-spacing:.07em; margin-bottom:6px; font-family:'Montserrat',sans-serif;">Total IP</p>
-      <p class="page-title" style="font-size:26px; font-weight:700; color:var(--text-1); line-height:1; font-variant-numeric:tabular-nums;">{{ "{:,}".format(total_ips) }}</p>
+      <p style="font-size:10px; color:var(--text-2); text-transform:uppercase; letter-spacing:.07em; margin-bottom:6px;">Total IP</p>
+      <p class="page-title" style="font-size:26px; color:var(--text-1); line-height:1; font-variant-numeric:tabular-nums;">{{ "{:,}".format(total_ips) }}</p>
       <p style="font-size:11px; color:var(--text-2); margin-top:5px;">{{ session.total_prefixes or 0 }} prefix</p>
     </div>
     <div class="card" style="padding:16px 18px;">
-      <p style="font-size:10px; color:var(--text-2); text-transform:uppercase; letter-spacing:.07em; margin-bottom:6px; font-family:'Montserrat',sans-serif;">Dilaporkan</p>
-      <p class="page-title" style="font-size:26px; font-weight:700; color:var(--yellow); line-height:1; font-variant-numeric:tabular-nums;">{{ "{:,}".format(reported) }}</p>
+      <p style="font-size:10px; color:var(--text-2); text-transform:uppercase; letter-spacing:.07em; margin-bottom:6px;">Dilaporkan</p>
+      <p class="page-title" style="font-size:26px; color:var(--yellow); line-height:1; font-variant-numeric:tabular-nums;">{{ "{:,}".format(reported) }}</p>
       <p style="font-size:11px; color:var(--text-2); margin-top:5px;">{{ "%.2f"|format(pct) }}% dari total</p>
     </div>
     <div class="card" style="padding:16px 18px;">
-      <p style="font-size:10px; color:var(--text-2); text-transform:uppercase; letter-spacing:.07em; margin-bottom:6px; font-family:'Montserrat',sans-serif;">Avg Score</p>
-      <p class="page-title" style="font-size:26px; font-weight:700; color:var(--blue); line-height:1; font-variant-numeric:tabular-nums;">{{ "%.1f"|format(summary.avg_score or 0) }}</p>
+      <p style="font-size:10px; color:var(--text-2); text-transform:uppercase; letter-spacing:.07em; margin-bottom:6px;">Avg Score</p>
+      <p class="page-title" style="font-size:26px; color:var(--blue); line-height:1; font-variant-numeric:tabular-nums;">{{ "%.1f"|format(summary.avg_score or 0) }}</p>
       <p style="font-size:11px; color:var(--text-2); margin-top:5px;">rata-rata abuse score</p>
     </div>
     <div class="card" style="padding:16px 18px;">
-      <p style="font-size:10px; color:var(--text-2); text-transform:uppercase; letter-spacing:.07em; margin-bottom:6px; font-family:'Montserrat',sans-serif;">Max Score</p>
-      <p class="page-title" style="font-size:26px; font-weight:700; line-height:1; font-variant-numeric:tabular-nums;
+      <p style="font-size:10px; color:var(--text-2); text-transform:uppercase; letter-spacing:.07em; margin-bottom:6px;">Max Score</p>
+      <p class="page-title" style="font-size:26px; line-height:1; font-variant-numeric:tabular-nums;
         color:{% if (summary.max_score or 0) >= 80 %}var(--red){% elif (summary.max_score or 0) >= 50 %}var(--orange){% else %}var(--green){% endif %};">
         {{ summary.max_score or 0 }}<span style="font-size:13px; font-weight:400; color:var(--text-2);"> /100</span>
       </p>
-      <p style="font-size:11px; color:var(--text-2); margin-top:5px;">
+      <p style="font-size:11px; margin-top:5px;">
         {% if (summary.max_score or 0) >= alert_threshold %}
           <span style="color:var(--red);">⚠ Di atas threshold {{ alert_threshold }}</span>
         {% else %}
-          Dalam batas aman
+          <span style="color:var(--text-2);">Dalam batas aman</span>
         {% endif %}
       </p>
     </div>
   </div>
 
   {# ── Tabs ── #}
-  <div class="tabs" style="margin-bottom:14px;" role="tablist">
+  <div class="tabs fade-in" style="margin-bottom:14px;" role="tablist">
     <button class="tab-btn active" id="tab-ips"    onclick="showTab('ips')"    role="tab">Top IP ({{ offenders|length }})</button>
     <button class="tab-btn"        id="tab-cats"   onclick="showTab('cats')"   role="tab">Kategori</button>
     <button class="tab-btn"        id="tab-prefix" onclick="showTab('prefix')" role="tab">Prefix ({{ prefixes|length }})</button>
@@ -120,13 +137,18 @@
             </td>
             <td class="mono" style="font-size:12px; color:var(--text-2);">{{ ip.prefix or "—" }}</td>
             <td>
-              {% if s >= 80 %}<span class="pill-block {% if s >= 90 %}pulse-red{% endif %}"><span class="pill-dot" style="background:var(--red);"></span>BLOCK</span>
-              {% elif s >= 50 %}<span class="pill-monitor"><span class="pill-dot" style="background:var(--orange);"></span>MONITOR</span>
-              {% else %}<span class="pill-ok"><span class="pill-dot" style="background:var(--green);"></span>OK</span>{% endif %}
+              {% if s >= 80 %}<span class="pill pill-block {% if s >= 90 %}pulse-red{% endif %}"><span class="pill-dot" style="background:var(--red);"></span>BLOCK</span>
+              {% elif s >= 50 %}<span class="pill pill-monitor"><span class="pill-dot" style="background:var(--orange);"></span>MONITOR</span>
+              {% else %}<span class="pill pill-ok"><span class="pill-dot" style="background:var(--green);"></span>OK</span>{% endif %}
             </td>
           </tr>
           {% else %}
-          <tr><td colspan="7" class="empty-state">Tidak ada IP yang dilaporkan pada sesi ini.</td></tr>
+          <tr>
+            <td colspan="7" class="empty-state">
+              <div style="font-size:26px; margin-bottom:8px;">✅</div>
+              Tidak ada IP yang dilaporkan pada sesi ini.
+            </td>
+          </tr>
           {% endfor %}
         </tbody>
       </table>
@@ -135,10 +157,10 @@
 
   {# ── Panel: Kategori ── #}
   <div id="panel-cats" class="card" style="display:none;">
-    <div style="padding:16px 18px;">
-      <h2 class="section-title" style="font-size:13px; margin-bottom:14px; color:var(--text-1);">Distribusi Kategori</h2>
+    <div style="padding:20px 22px;">
+      <h2 class="section-title" style="font-size:13px; margin-bottom:16px; color:var(--text-1);">Distribusi Kategori</h2>
       {% if cat_labels_json != '[]' %}
-      <div style="height:220px; position:relative;">
+      <div style="height:240px; position:relative;">
         <canvas id="catChart"></canvas>
       </div>
       {% else %}
@@ -186,7 +208,8 @@
   {# ── Panel: Alerts ── #}
   {% if alerts %}
   <div id="panel-alerts" class="card" style="display:none;">
-    <div style="padding:12px 18px; border-bottom:1px solid var(--border);">
+    <div style="padding:12px 18px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:8px;">
+      <svg style="width:16px;height:16px;color:var(--red);" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
       <span style="font-size:13px; color:var(--red); font-weight:600;">{{ alerts|length }} IP dengan score ≥ {{ alert_threshold }}</span>
     </div>
     <div style="overflow-x:auto;">

@@ -44,7 +44,9 @@ logger = logging.getLogger(__name__)
 
 
 def _is_admin(user_id: int) -> bool:
-    return not config.admin_user_ids or user_id in config.admin_user_ids
+    if not config.admin_user_ids:
+        return False
+    return user_id in config.admin_user_ids
 
 
 async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:

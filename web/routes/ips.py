@@ -1,5 +1,6 @@
+import ipaddress
 import math
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import HTMLResponse
 
 from db import get_ip_detail_any, get_ips_paginated, get_latest_done_session, search_ip_across_sessions
@@ -87,6 +88,11 @@ async def ip_detail(
     request: Request, ip_address: str, user: str = Depends(require_auth)
 ):
     templates = request.app.state.templates
+
+    try:
+        ipaddress.ip_address(ip_address)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Format IP tidak valid")
 
     ip_data = await get_ip_detail_any(ip_address)
     history = await search_ip_across_sessions(ip_address, limit=20)

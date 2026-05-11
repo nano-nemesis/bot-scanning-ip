@@ -3,10 +3,22 @@
 
 {% block content %}
 <div style="padding:28px 36px;">
-  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
+
+  {# ── Header ── #}
+  <div class="fade-in" style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
     <div>
-      <h1 style="font-size:24px; font-family:'Poppins',sans-serif; font-weight:800; color:var(--text-1);">Scan Sessions</h1>
-      <p style="font-size:13px; color:var(--text-2); margin-top:3px;">Riwayat semua sesi scanning</p>
+      <h1 class="page-title" style="font-size:24px; color:var(--text-1);">Scan Sessions</h1>
+      <p style="font-size:13px; color:var(--text-2); margin-top:3px;">
+        Riwayat semua sesi scanning
+        {% if sessions %}
+        — <strong style="color:var(--text-1);">{{ sessions|length }}</strong> sesi
+        <span style="color:var(--green); font-weight:600; margin-left:6px;">{{ sessions | selectattr('status','eq','done') | list | length }} sukses</span>
+        {% set failed = sessions | selectattr('status','eq','failed') | list | length %}
+        {% if failed > 0 %}
+        <span style="color:var(--red); font-weight:600; margin-left:6px;">{{ failed }} gagal</span>
+        {% endif %}
+        {% endif %}
+      </p>
     </div>
   </div>
 
@@ -14,55 +26,88 @@
   <div style="background:rgba(248,81,73,.1); border:1px solid rgba(248,81,73,.3); border-radius:8px; padding:12px 16px; color:var(--red); margin-bottom:16px; font-size:13px;">{{ error }}</div>
   {% endif %}
 
-  <div class="card">
+  {% if not sessions %}
+  <div class="card fade-in" style="padding:48px 24px; text-align:center;">
+    <div style="font-size:36px; margin-bottom:12px;">🔍</div>
+    <div class="page-title" style="font-size:16px; color:var(--text-1); margin-bottom:6px;">Belum ada sesi scan</div>
+    <div style="font-size:13px; color:var(--text-2);">Gunakan <code style="background:rgba(56,139,253,.1); color:var(--blue); padding:2px 7px; border-radius:4px; font-family:'JetBrains Mono',monospace;">/scan</code> di Telegram untuk memulai.</div>
+  </div>
+  {% else %}
+  <div class="card fade-in">
     <div style="overflow-x:auto;">
       <table class="dt">
         <thead>
           <tr>
-            <th>#</th>
+            <th style="width:40px;">#</th>
             <th>Tipe</th>
             <th>Status</th>
             <th>Mulai (WIB)</th>
             <th>Selesai (WIB)</th>
             <th style="text-align:right;">Prefix</th>
             <th style="text-align:right;">Total IP</th>
-            <th></th>
+            <th style="text-align:right;"></th>
           </tr>
         </thead>
         <tbody>
           {% for s in sessions %}
-          <tr>
+          <tr class="session-row" style="position:relative;">
             <td class="mono" style="color:var(--text-2); font-size:12px;">#{{ s.id }}</td>
             <td>
               {% if s.session_type == 'solo' %}
-                <span class="badge-blue" style="font-size:11px;">solo</span>
+                <span class="tag tag-type">🔎 solo</span>
               {% else %}
-                <span class="badge-blue" style="font-size:11px;">full</span>
+                <span class="tag tag-type">📡 full</span>
               {% endif %}
             </td>
             <td>
               {% if s.status == 'done' %}
-                <span class="pill-ok">✓ done</span>
+                <span class="pill pill-ok"><span class="pill-dot" style="background:var(--green);"></span> done</span>
               {% elif s.status == 'running' %}
-                <span class="badge-blue" style="font-size:11px;">⟳ running</span>
+                <span class="pill" style="background:rgba(56,139,253,.1); color:var(--blue); border:1px solid rgba(56,139,253,.2);">
+                  <span class="loading-spin" style="width:8px;height:8px;border-width:1.5px;"></span> running
+                </span>
               {% else %}
-                <span class="pill-block">✗ failed</span>
+                <span class="pill pill-block"><span class="pill-dot" style="background:var(--red);"></span> failed</span>
               {% endif %}
             </td>
-            <td class="mono" style="font-size:12px; color:var(--text-2);">{{ s.started_at | to_wib }}</td>
+            <td>
+              <div class="mono" style="font-size:12px; color:var(--text-1);">{{ s.started_at | to_wib }}</div>
+              <div class="rel-time" style="font-size:10px; color:var(--text-3); margin-top:1px;" data-ts="{{ s.started_at }}"></div>
+            </td>
             <td class="mono" style="font-size:12px; color:var(--text-2);">{{ s.finished_at | to_wib if s.finished_at else "—" }}</td>
             <td style="text-align:right; color:var(--text-2); font-size:13px;">{{ s.total_prefixes or 0 }}</td>
-            <td style="text-align:right; font-size:13px;">{{ "{:,}".format(s.total_ips or 0) }}</td>
-            <td>
-              <a href="/sessions/{{ s.id }}" class="btn btn-outline btn-sm">Detail →</a>
+            <td style="text-align:right; font-size:13px; font-family:'JetBrains Mono',monospace;">{{ "{:,}".format(s.total_ips or 0) }}</td>
+            <td style="text-align:right;">
+              <a href="/sessions/{{ s.id }}" class="btn btn-outline btn-sm" style="white-space:nowrap;">Detail →</a>
             </td>
           </tr>
-          {% else %}
-          <tr><td colspan="8" class="empty-state">Belum ada sesi scan. Gunakan /scan di Telegram.</td></tr>
           {% endfor %}
         </tbody>
       </table>
     </div>
   </div>
+  {% endif %}
+
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Relative timestamp: "2 jam lalu"
+(function() {
+  function relTime(isoStr) {
+    try {
+      const d = new Date(isoStr.endsWith('Z') ? isoStr : isoStr + 'Z');
+      const diff = Math.floor((Date.now() - d.getTime()) / 1000);
+      if (diff < 60) return diff + ' detik lalu';
+      if (diff < 3600) return Math.floor(diff/60) + ' menit lalu';
+      if (diff < 86400) return Math.floor(diff/3600) + ' jam lalu';
+      return Math.floor(diff/86400) + ' hari lalu';
+    } catch(e) { return ''; }
+  }
+  document.querySelectorAll('.rel-time[data-ts]').forEach(function(el) {
+    el.textContent = relTime(el.dataset.ts);
+  });
+})();
+</script>
 {% endblock %}

@@ -320,6 +320,16 @@ async def get_any_session() -> dict | None:
         return dict(row) if row else None
 
 
+async def get_session_by_id(session_id: int) -> dict | None:
+    async with aiosqlite.connect(config.db_path) as db:
+        db.row_factory = aiosqlite.Row
+        cursor = await db.execute(
+            "SELECT * FROM scan_sessions WHERE id = ?", (session_id,)
+        )
+        row = await cursor.fetchone()
+        return dict(row) if row else None
+
+
 async def get_ip_detail(session_id: int, ip_address: str) -> dict | None:
     async with aiosqlite.connect(config.db_path) as db:
         db.row_factory = aiosqlite.Row
@@ -470,15 +480,19 @@ async def update_web_user_password(user_id: int, new_hash: str) -> None:
 
 async def update_web_user_username(user_id: int, new_username: str) -> bool:
     """Returns False if username already taken."""
-    async with aiosqlite.connect(config.db_path) as db:
-        try:
+    try:
+        async with aiosqlite.connect(config.db_path) as db:
             await db.execute(
                 "UPDATE web_users SET username = ? WHERE id = ?", (new_username, user_id)
             )
             await db.commit()
             return True
-        except Exception:
-            return False
+    except aiosqlite.IntegrityError:
+        logger.warning("Username '%s' sudah dipakai", new_username)
+        return False
+    except Exception:
+        logger.exception("Unexpected error updating username for user_id=%d", user_id)
+        return False
 
 
 async def delete_web_user(user_id: int) -> None:

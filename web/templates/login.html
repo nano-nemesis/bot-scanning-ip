@@ -3,54 +3,215 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Login — AS IP Scanner</title>
+  <title>Login — AS Scanner</title>
+
+  <script>
+    (function(){
+      var t = localStorage.getItem('theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', t);
+    })();
+  </script>
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Montserrat:wght@400;500;600&display=swap" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet">
-  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@800&family=Montserrat:wght@500&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+
   <style>
-    body { font-family: 'Montserrat', sans-serif; }
-    h1, h2 { font-family: 'Poppins', sans-serif; }
+    :root, [data-theme="dark"] {
+      --bg:         #0f1117;
+      --bg-card:    #1c2128;
+      --bg-input:   #161b22;
+      --border:     #30363d;
+      --border-2:   #444c56;
+      --text-1:     #e6edf3;
+      --text-2:     #8b949e;
+      --text-3:     #484f58;
+      --blue:       #388bfd;
+      --red:        #f85149;
+      --green:      #238636;
+      --green-h:    #2ea043;
+    }
+    [data-theme="light"] {
+      --bg:         #f6f8fa;
+      --bg-card:    #ffffff;
+      --bg-input:   #f6f8fa;
+      --border:     #d0d7de;
+      --border-2:   #8c959f;
+      --text-1:     #24292f;
+      --text-2:     #57606a;
+      --text-3:     #8c959f;
+      --blue:       #0969da;
+      --red:        #cf222e;
+      --green:      #1a7f37;
+      --green-h:    #2ea043;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 500;
+      background: var(--bg);
+      color: var(--text-1);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      /* dot grid background */
+      background-image: radial-gradient(var(--border) 1px, transparent 1px);
+      background-size: 28px 28px;
+      background-attachment: fixed;
+    }
+
+    .login-card {
+      width: 100%;
+      max-width: 380px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 36px 32px;
+      box-shadow: 0 24px 64px rgba(0,0,0,.35);
+      animation: slideUp .35s ease both;
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .login-brand {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+    .login-icon {
+      width: 56px; height: 56px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, rgba(56,139,253,.2), rgba(56,139,253,.08));
+      border: 1px solid rgba(56,139,253,.3);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 26px;
+      margin-bottom: 14px;
+    }
+    .login-title {
+      font-family: 'Poppins', sans-serif;
+      font-weight: 800;
+      font-size: 20px;
+      color: var(--text-1);
+      margin-bottom: 4px;
+    }
+    .login-sub {
+      font-size: 13px;
+      color: var(--text-2);
+    }
+
+    .login-error {
+      background: rgba(248,81,73,.1);
+      border: 1px solid rgba(248,81,73,.3);
+      border-radius: 8px;
+      padding: 10px 14px;
+      color: var(--red);
+      font-size: 13px;
+      margin-bottom: 18px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .login-error svg { width: 15px; height: 15px; flex-shrink: 0; }
+
+    .login-info {
+      background: rgba(56,139,253,.1);
+      border: 1px solid rgba(56,139,253,.25);
+      border-radius: 8px;
+      padding: 10px 14px;
+      color: var(--blue);
+      font-size: 13px;
+      margin-bottom: 18px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-bottom: 14px;
+    }
+    .form-group label {
+      font-size: 11px;
+      color: var(--text-2);
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+    }
+    .form-group input {
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      color: var(--text-1);
+      border-radius: 8px;
+      padding: 9px 12px;
+      font-size: 14px;
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 500;
+      outline: none;
+      transition: border .13s, box-shadow .13s;
+      width: 100%;
+    }
+    .form-group input:focus {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(56,139,253,.12);
+    }
+    .form-group input::placeholder { color: var(--text-3); }
+
+    .login-btn {
+      width: 100%;
+      background: var(--green);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 16px;
+      font-size: 14px;
+      font-weight: 600;
+      font-family: 'Montserrat', sans-serif;
+      cursor: pointer;
+      transition: background .13s;
+      margin-top: 6px;
+    }
+    .login-btn:hover { background: var(--green-h); }
   </style>
 </head>
-<body class="bg-base-100 min-h-screen flex items-center justify-center">
-  <div class="card w-full max-w-sm bg-base-200 shadow-2xl border border-base-300">
-    <div class="card-body gap-4">
-
-      <div class="text-center mb-2">
-        <div class="text-4xl mb-2">🛡</div>
-        <h1 class="text-xl font-bold">IP Abuse Scanner</h1>
-        <p class="text-sm text-base-content/50">Masuk untuk melanjutkan</p>
-      </div>
-
-      {% if error %}
-      <div class="alert alert-error text-sm py-2">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-        </svg>
-        {{ error }}
-      </div>
-      {% endif %}
-
-      <form method="post" action="/login" class="flex flex-col gap-3">
-        <label class="form-control w-full">
-          <div class="label pb-1"><span class="label-text text-xs">Username</span></div>
-          <input type="text" name="username" placeholder="Username"
-                 class="input input-bordered input-sm w-full" required autofocus>
-        </label>
-
-        <label class="form-control w-full">
-          <div class="label pb-1"><span class="label-text text-xs">Password</span></div>
-          <input type="password" name="password" placeholder="Password"
-                 class="input input-bordered input-sm w-full" required>
-        </label>
-
-        <button type="submit" class="btn btn-primary btn-sm mt-1">
-          Masuk
-        </button>
-      </form>
-
+<body>
+  <div class="login-card">
+    <div class="login-brand">
+      <div class="login-icon">🛡</div>
+      <div class="login-title">IP Abuse Scanner</div>
+      <div class="login-sub">Masuk untuk melanjutkan</div>
     </div>
+
+    {% if error %}
+    <div class="login-error">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+      </svg>
+      {{ error }}
+    </div>
+    {% endif %}
+
+    {% if info %}
+    <div class="login-info">{{ info }}</div>
+    {% endif %}
+
+    <form method="post" action="/login">
+      <div class="form-group">
+        <label for="username">Username</label>
+        <input type="text" id="username" name="username" placeholder="Masukkan username" required autofocus>
+      </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" placeholder="Masukkan password" required>
+      </div>
+      <button type="submit" class="login-btn">Masuk</button>
+    </form>
   </div>
 </body>
 </html>

@@ -3,15 +3,16 @@
 
 {% block content %}
 <div style="padding:28px 36px;">
-  <div style="margin-bottom:18px;">
-    <h1 style="font-size:24px; font-family:'Poppins',sans-serif; font-weight:800; color:var(--text-1);">IP List</h1>
+
+  <div class="fade-in" style="margin-bottom:18px;">
+    <h1 class="page-title" style="font-size:24px; color:var(--text-1);">IP List</h1>
     <p style="font-size:13px; color:var(--text-2); margin-top:3px;">
       Sesi #{{ session_id or "—" }} &middot; <strong style="color:var(--text-1);">{{ "{:,}".format(total) }}</strong> IP ditemukan
     </p>
   </div>
 
   {# ── Filters ── #}
-  <div class="card" style="padding:16px 18px; margin-bottom:14px;">
+  <div class="card fade-in" style="padding:16px 20px; margin-bottom:14px;">
     <form id="filter-form"
           hx-get="/ips"
           hx-target="#ip-tbody"
@@ -23,24 +24,24 @@
       <input type="hidden" name="page" value="1">
 
       <div style="display:flex; flex-direction:column; gap:4px;">
-        <label style="font-size:11px; color:var(--text-2);">Cari IP</label>
+        <label style="font-size:10px; color:var(--text-2); text-transform:uppercase; letter-spacing:.05em;">Cari IP</label>
         <input type="text" name="search_ip" value="{{ search_ip }}" placeholder="1.2.3.4" class="fi" style="width:140px;"
                hx-trigger="input delay:400ms" hx-include="#filter-form">
       </div>
       <div style="display:flex; flex-direction:column; gap:4px;">
-        <label style="font-size:11px; color:var(--text-2);">Min Score</label>
+        <label style="font-size:10px; color:var(--text-2); text-transform:uppercase; letter-spacing:.05em;">Min Score</label>
         <input type="number" name="min_score" value="{{ min_score or '' }}" placeholder="0" min="0" max="100" class="fi" style="width:80px;">
       </div>
       <div style="display:flex; flex-direction:column; gap:4px;">
-        <label style="font-size:11px; color:var(--text-2);">Max Score</label>
+        <label style="font-size:10px; color:var(--text-2); text-transform:uppercase; letter-spacing:.05em;">Max Score</label>
         <input type="number" name="max_score" value="{{ max_score or '' }}" placeholder="100" min="0" max="100" class="fi" style="width:80px;">
       </div>
       <div style="display:flex; flex-direction:column; gap:4px;">
-        <label style="font-size:11px; color:var(--text-2);">Negara</label>
+        <label style="font-size:10px; color:var(--text-2); text-transform:uppercase; letter-spacing:.05em;">Negara</label>
         <input type="text" name="country" value="{{ country }}" placeholder="ID" maxlength="2" class="fi" style="width:64px; text-transform:uppercase;">
       </div>
       <div style="display:flex; flex-direction:column; gap:4px;">
-        <label style="font-size:11px; color:var(--text-2);">Urutkan</label>
+        <label style="font-size:10px; color:var(--text-2); text-transform:uppercase; letter-spacing:.05em;">Urutkan</label>
         <select name="sort_by" class="fi" style="width:120px;">
           {% for val, lbl in [("abuse_score","Score"),("num_reports","Reports"),("ip_address","IP"),("country_code","Negara"),("scanned_at","Tanggal")] %}
           <option value="{{ val }}" {% if sort_by == val %}selected{% endif %}>{{ lbl }}</option>
@@ -48,14 +49,14 @@
         </select>
       </div>
       <div style="display:flex; flex-direction:column; gap:4px;">
-        <label style="font-size:11px; color:var(--text-2);">Arah</label>
+        <label style="font-size:10px; color:var(--text-2); text-transform:uppercase; letter-spacing:.05em;">Arah</label>
         <select name="sort_dir" class="fi" style="width:88px;">
           <option value="DESC" {% if sort_dir=="DESC" %}selected{% endif %}>↓ DESC</option>
           <option value="ASC"  {% if sort_dir=="ASC"  %}selected{% endif %}>↑ ASC</option>
         </select>
       </div>
       <div style="display:flex; flex-direction:column; gap:4px;">
-        <label style="font-size:11px; color:var(--text-2);">/halaman</label>
+        <label style="font-size:10px; color:var(--text-2); text-transform:uppercase; letter-spacing:.05em;">/halaman</label>
         <select name="per_page" class="fi" style="width:72px;">
           {% for opt in per_page_options %}
           <option value="{{ opt }}" {% if per_page==opt %}selected{% endif %}>{{ opt }}</option>
@@ -65,23 +66,23 @@
       <div style="display:flex; align-items:flex-end; gap:6px;">
         <button type="submit" class="btn btn-primary">Filter</button>
         <a href="/ips{% if session_id %}?session={{ session_id }}{% endif %}" class="btn btn-outline">Reset</a>
-        <span id="spinner" class="htmx-indicator"><span class="loading-spin"></span></span>
+        <span id="spinner" class="htmx-indicator" style="display:inline-flex; align-items:center;"><span class="loading-spin"></span></span>
       </div>
     </form>
   </div>
 
   {# ── Table ── #}
-  <div class="card">
+  <div class="card fade-in">
     <div style="overflow-x:auto;">
       <table class="dt">
         <thead>
           <tr>
             <th>IP Address</th>
-            <th>Score</th>
-            <th>Reports</th>
-            <th>Negara</th>
+            <th>Score {% if sort_by == 'abuse_score' %}<span style="color:var(--blue);">{{ '↓' if sort_dir == 'DESC' else '↑' }}</span>{% endif %}</th>
+            <th>Reports {% if sort_by == 'num_reports' %}<span style="color:var(--blue);">{{ '↓' if sort_dir == 'DESC' else '↑' }}</span>{% endif %}</th>
+            <th>Negara {% if sort_by == 'country_code' %}<span style="color:var(--blue);">{{ '↓' if sort_dir == 'DESC' else '↑' }}</span>{% endif %}</th>
             <th>Prefix</th>
-            <th>Terakhir Dilaporkan</th>
+            <th>Terakhir Dilaporkan {% if sort_by == 'scanned_at' %}<span style="color:var(--blue);">{{ '↓' if sort_dir == 'DESC' else '↑' }}</span>{% endif %}</th>
             <th>Status</th>
           </tr>
         </thead>
@@ -93,21 +94,28 @@
 
     {# Pagination #}
     {% if total_pages > 1 %}
-    <div style="display:flex; justify-content:center; padding:14px; border-top:1px solid var(--border); gap:4px; flex-wrap:wrap;">
-      {% if page > 1 %}
-      <a href="?page={{ page-1 }}&per_page={{ per_page }}&sort_by={{ sort_by }}&sort_dir={{ sort_dir }}&search_ip={{ search_ip }}&country={{ country }}{% if min_score %}&min_score={{ min_score }}{% endif %}{% if max_score %}&max_score={{ max_score }}{% endif %}{% if session_id %}&session={{ session_id }}{% endif %}"
-         class="btn btn-outline btn-sm">«</a>
-      {% endif %}
-      {% for p in range([1, page-2]|max, [total_pages+1, page+3]|min) %}
-      <a href="?page={{ p }}&per_page={{ per_page }}&sort_by={{ sort_by }}&sort_dir={{ sort_dir }}&search_ip={{ search_ip }}&country={{ country }}{% if min_score %}&min_score={{ min_score }}{% endif %}{% if max_score %}&max_score={{ max_score }}{% endif %}{% if session_id %}&session={{ session_id }}{% endif %}"
-         class="btn {% if p == page %}btn-primary{% else %}btn-outline{% endif %} btn-sm">{{ p }}</a>
-      {% endfor %}
-      {% if page < total_pages %}
-      <a href="?page={{ page+1 }}&per_page={{ per_page }}&sort_by={{ sort_by }}&sort_dir={{ sort_dir }}&search_ip={{ search_ip }}&country={{ country }}{% if min_score %}&min_score={{ min_score }}{% endif %}{% if max_score %}&max_score={{ max_score }}{% endif %}{% if session_id %}&session={{ session_id }}{% endif %}"
-         class="btn btn-outline btn-sm">»</a>
-      {% endif %}
+    <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 18px; border-top:1px solid var(--border); flex-wrap:wrap; gap:8px;">
+      <span style="font-size:12px; color:var(--text-2);">
+        Halaman <strong style="color:var(--text-1);">{{ page }}</strong> dari <strong style="color:var(--text-1);">{{ total_pages }}</strong>
+        &nbsp;·&nbsp; <strong style="color:var(--text-1);">{{ "{:,}".format(total) }}</strong> total IP
+      </span>
+      <div style="display:flex; gap:4px; flex-wrap:wrap;">
+        {% if page > 1 %}
+        <a href="?page={{ page-1 }}&per_page={{ per_page }}&sort_by={{ sort_by }}&sort_dir={{ sort_dir }}&search_ip={{ search_ip }}&country={{ country }}{% if min_score %}&min_score={{ min_score }}{% endif %}{% if max_score %}&max_score={{ max_score }}{% endif %}{% if session_id %}&session={{ session_id }}{% endif %}"
+           class="btn btn-outline btn-sm">«</a>
+        {% endif %}
+        {% for p in range([1, page-2]|max, [total_pages+1, page+3]|min) %}
+        <a href="?page={{ p }}&per_page={{ per_page }}&sort_by={{ sort_by }}&sort_dir={{ sort_dir }}&search_ip={{ search_ip }}&country={{ country }}{% if min_score %}&min_score={{ min_score }}{% endif %}{% if max_score %}&max_score={{ max_score }}{% endif %}{% if session_id %}&session={{ session_id }}{% endif %}"
+           class="btn {% if p == page %}btn-primary{% else %}btn-outline{% endif %} btn-sm">{{ p }}</a>
+        {% endfor %}
+        {% if page < total_pages %}
+        <a href="?page={{ page+1 }}&per_page={{ per_page }}&sort_by={{ sort_by }}&sort_dir={{ sort_dir }}&search_ip={{ search_ip }}&country={{ country }}{% if min_score %}&min_score={{ min_score }}{% endif %}{% if max_score %}&max_score={{ max_score }}{% endif %}{% if session_id %}&session={{ session_id }}{% endif %}"
+           class="btn btn-outline btn-sm">»</a>
+        {% endif %}
+      </div>
     </div>
     {% endif %}
   </div>
+
 </div>
 {% endblock %}

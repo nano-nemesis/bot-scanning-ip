@@ -80,7 +80,7 @@
     /* ── Layout ── */
     #layout { display: flex; min-height: 100vh; }
     #sidebar {
-      width: 140px;
+      width: 220px;
       background: var(--bg-sidebar);
       border-right: 1px solid var(--border);
       position: fixed; top: 0; left: 0; bottom: 0;
@@ -89,7 +89,7 @@
       overflow: hidden;
     }
     #sidebar-nav { flex: 1; overflow-y: auto; padding: 8px; display: flex; flex-direction: column; gap: 2px; }
-    #main { margin-left: 140px; flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+    #main { margin-left: 220px; flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
 
     /* ── Mobile ── */
     #mob-bar {
@@ -108,23 +108,101 @@
     body.mob-open { overflow: hidden; }
     body.mob-open #mob-overlay { display: block; }
     @media (max-width: 1023px) {
-      #sidebar { left: -144px; transition: left .22s ease; }
+      #sidebar { left: -224px; transition: left .22s ease; }
       #sidebar.open { left: 0; box-shadow: 6px 0 32px rgba(0,0,0,.45); }
       #main { margin-left: 0; }
       #mob-bar { display: flex; }
     }
 
+    /* ── Sidebar header ── */
+    .sidebar-brand {
+      padding: 16px 16px 14px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .sidebar-brand-icon {
+      width: 36px; height: 36px; border-radius: 9px;
+      background: linear-gradient(135deg, rgba(56,139,253,.2), rgba(56,139,253,.08));
+      border: 1px solid rgba(56,139,253,.25);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; flex-shrink: 0;
+    }
+    .sidebar-brand-text { min-width: 0; }
+    .sidebar-brand-title { font-family: 'Poppins', sans-serif; font-weight: 800; font-size: 13px; color: var(--text-1); line-height: 1.2; }
+    .sidebar-brand-sub { font-size: 10px; color: var(--text-2); margin-top: 1px; }
+
+    /* ── Nav divider ── */
+    .nav-divider { height: 1px; background: var(--border); margin: 6px 4px; }
+
     /* ── Nav links ── */
     .nav-link {
-      display: flex; flex-direction: column; align-items: center; gap: 4px;
-      padding: 10px 8px; border-radius: 8px; text-decoration: none;
-      font-size: 10px; font-weight: 500; color: var(--text-2);
-      transition: background .13s, color .13s;
+      display: flex; flex-direction: row; align-items: center; gap: 10px;
+      padding: 9px 12px; border-radius: 8px; text-decoration: none;
+      font-size: 13px; font-weight: 500; color: var(--text-2);
+      transition: background .13s, color .13s, border-color .13s;
+      border-left: 3px solid transparent;
+      position: relative;
     }
-    .nav-link svg { width: 19px; height: 19px; flex-shrink: 0; }
+    .nav-link svg { width: 17px; height: 17px; flex-shrink: 0; }
     .nav-link:hover { color: var(--text-1); background: rgba(128,128,128,.09); }
-    .nav-link.active { color: var(--blue); background: rgba(56,139,253,.12); }
-    [data-theme="light"] .nav-link.active { background: rgba(9,105,218,.1); }
+    .nav-link.active {
+      color: var(--blue);
+      background: rgba(56,139,253,.1);
+      border-left-color: var(--blue);
+    }
+    [data-theme="light"] .nav-link.active { background: rgba(9,105,218,.08); }
+
+    /* ── Sidebar footer ── */
+    .sidebar-footer {
+      flex-shrink: 0;
+      padding: 10px 12px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .sidebar-clock {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      color: var(--text-3);
+      text-align: center;
+      padding: 4px 0;
+    }
+    .sidebar-theme-btn {
+      width: 100%;
+      background: rgba(128,128,128,.07);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      cursor: pointer;
+      padding: 6px 10px;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 11px;
+      color: var(--text-2);
+      justify-content: center;
+      transition: all .13s;
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 500;
+    }
+    .sidebar-theme-btn:hover { color: var(--text-1); background: rgba(128,128,128,.12); border-color: var(--border-2); }
+    .sidebar-user {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 2px;
+    }
+    .sidebar-avatar {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: rgba(56,139,253,.15); color: var(--blue);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-family: 'Poppins', sans-serif; font-weight: 800;
+      flex-shrink: 0;
+    }
+    .sidebar-username { font-size: 12px; color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
 
     /* ── Cards ── */
     .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; }
@@ -135,11 +213,11 @@
     .badge-orange { background: rgba(210,153,34,.12); color: var(--orange); border: 1px solid rgba(210,153,34,.25); border-radius: 20px; padding: 2px 10px; font-size: 12px; font-family:'JetBrains Mono',monospace; font-weight:600; display:inline-flex; align-items:center; }
     .badge-green  { background: rgba(63,185,80,.12);  color: var(--green);  border: 1px solid rgba(63,185,80,.25);  border-radius: 20px; padding: 2px 10px; font-size: 12px; font-family:'JetBrains Mono',monospace; font-weight:600; display:inline-flex; align-items:center; }
     .badge-blue   { background: rgba(56,139,253,.12); color: var(--blue);   border: 1px solid rgba(56,139,253,.25); border-radius: 20px; padding: 2px 10px; font-size: 12px; font-weight:600; display:inline-flex; align-items:center; }
-    /* aliases for ip_detail */
-    .b-red { background: rgba(248,81,73,.12);  color: var(--red);    border: 1px solid rgba(248,81,73,.25);  border-radius: 20px; padding: 2px 10px; font-size: 12px; font-family:'JetBrains Mono',monospace; font-weight:600; display:inline-flex; align-items:center; }
+    /* aliases */
+    .b-red    { background: rgba(248,81,73,.12);  color: var(--red);    border: 1px solid rgba(248,81,73,.25);  border-radius: 20px; padding: 2px 10px; font-size: 12px; font-family:'JetBrains Mono',monospace; font-weight:600; display:inline-flex; align-items:center; }
     .b-orange { background: rgba(210,153,34,.12); color: var(--orange); border: 1px solid rgba(210,153,34,.25); border-radius: 20px; padding: 2px 10px; font-size: 12px; font-family:'JetBrains Mono',monospace; font-weight:600; display:inline-flex; align-items:center; }
-    .b-green { background: rgba(63,185,80,.12);  color: var(--green);  border: 1px solid rgba(63,185,80,.25);  border-radius: 20px; padding: 2px 10px; font-size: 12px; font-family:'JetBrains Mono',monospace; font-weight:600; display:inline-flex; align-items:center; }
-    .b-blue { background: rgba(56,139,253,.12); color: var(--blue);   border: 1px solid rgba(56,139,253,.25); border-radius: 20px; padding: 2px 10px; font-size: 12px; font-weight:600; display:inline-flex; align-items:center; }
+    .b-green  { background: rgba(63,185,80,.12);  color: var(--green);  border: 1px solid rgba(63,185,80,.25);  border-radius: 20px; padding: 2px 10px; font-size: 12px; font-family:'JetBrains Mono',monospace; font-weight:600; display:inline-flex; align-items:center; }
+    .b-blue   { background: rgba(56,139,253,.12); color: var(--blue);   border: 1px solid rgba(56,139,253,.25); border-radius: 20px; padding: 2px 10px; font-size: 12px; font-weight:600; display:inline-flex; align-items:center; }
 
     /* ── Status pills ── */
     .pill { border-radius: 20px; padding: 3px 10px; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
@@ -186,7 +264,6 @@
     /* ── Grid helpers ── */
     .g4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; }
     .g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-    /* legacy aliases */
     .grid-4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; }
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
     @media (max-width: 860px) { .g4, .grid-4 { grid-template-columns: 1fr 1fr; gap: 12px; } }
@@ -206,6 +283,13 @@
     .sbar-fill, .score-bar-fill { height: 100%; border-radius: 3px; }
     @keyframes pulse-red { 0%,100%{opacity:1} 50%{opacity:.4} }
     .pulse-red { animation: pulse-red 2s ease-in-out infinite; }
+
+    /* ── Fade-in animation ── */
+    @keyframes fadeInUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+    .fade-in { animation: fadeInUp .3s ease both; }
+    .fade-in-1 { animation: fadeInUp .3s .05s ease both; }
+    .fade-in-2 { animation: fadeInUp .3s .1s ease both; }
+    .fade-in-3 { animation: fadeInUp .3s .15s ease both; }
   </style>
 
   {% block head %}{% endblock %}
@@ -214,10 +298,12 @@
 <div id="layout">
 
   <aside id="sidebar">
-    <div style="padding:16px 8px 12px; border-bottom:1px solid var(--border); text-align:center; flex-shrink:0;">
-      <div style="font-size:24px; margin-bottom:5px;">🛡</div>
-      <div class="title" style="font-size:12px; color:var(--text-1); line-height:1.3;">AS{{ as_number }}</div>
-      <div style="font-size:9px; color:var(--text-2); margin-top:3px; line-height:1.5;">IP Abuse<br>Scanner</div>
+    <div class="sidebar-brand">
+      <div class="sidebar-brand-icon">🛡</div>
+      <div class="sidebar-brand-text">
+        <div class="sidebar-brand-title">AS{{ as_number }}</div>
+        <div class="sidebar-brand-sub">IP Abuse Scanner</div>
+      </div>
     </div>
 
     <nav id="sidebar-nav">
@@ -233,25 +319,26 @@
         <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
         IP List
       </a>
+
+      <div class="nav-divider"></div>
+
       <a href="/settings" class="nav-link {% if active_page=='settings' %}active{% endif %}">
         <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
         Settings
       </a>
     </nav>
 
-    <div style="flex-shrink:0; padding:10px 8px; border-top:1px solid var(--border); display:flex; flex-direction:column; align-items:center; gap:8px;">
-      <button onclick="toggleTheme()"
-        style="width:100%; background:rgba(128,128,128,.07); border:1px solid var(--border); border-radius:8px; cursor:pointer; padding:6px 8px; display:flex; align-items:center; gap:5px; font-size:10px; color:var(--text-2); justify-content:center; transition:all .13s; font-family:'Montserrat',sans-serif; font-weight:500;">
-        <span id="th-icon">☀️</span><span id="th-lbl">Light</span>
+    <div class="sidebar-footer">
+      <div class="sidebar-clock" id="wib-clock"></div>
+      <button onclick="toggleTheme()" class="sidebar-theme-btn">
+        <span id="th-icon">☀️</span><span id="th-lbl">Light Mode</span>
       </button>
-      <div style="display:flex; align-items:center; gap:6px; width:100%; padding:0 2px;">
-        <div style="width:28px; height:28px; border-radius:50%; background:rgba(56,139,253,.15); color:var(--blue); display:flex; align-items:center; justify-content:center; font-size:12px; font-family:'Poppins',sans-serif; font-weight:800; flex-shrink:0;">
-          {{ current_user[0]|upper }}
-        </div>
-        <span style="font-size:10px; color:var(--text-2); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1;">{{ current_user }}</span>
+      <div class="sidebar-user">
+        <div class="sidebar-avatar">{{ current_user[0]|upper }}</div>
+        <span class="sidebar-username">{{ current_user }}</span>
         <form method="post" action="/logout" style="flex-shrink:0;">
-          <button class="btn-icon" title="Logout" style="padding:3px;">
-            <svg style="width:14px;height:14px;" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+          <button class="btn-icon" title="Logout" style="padding:4px;">
+            <svg style="width:15px;height:15px;" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
           </button>
         </form>
       </div>
@@ -285,7 +372,7 @@
     document.documentElement.style.background = t==='dark' ? '#0f1117' : '#f6f8fa';
     var i = document.getElementById('th-icon'), l = document.getElementById('th-lbl');
     if (i) i.textContent = t==='dark' ? '☀️' : '🌙';
-    if (l) l.textContent = t==='dark' ? 'Light' : 'Dark';
+    if (l) l.textContent = t==='dark' ? 'Light Mode' : 'Dark Mode';
   }
   _setTheme(localStorage.getItem('theme') || 'dark');
 
